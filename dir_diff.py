@@ -18,6 +18,8 @@ def scan_folder(directory):
     """扫描文件夹并返回{哈希值: [文件名列表]}的映射"""
     content_map = defaultdict(list)
     for filename in os.listdir(directory):
+        if filename == '.DS_Store':
+            continue
         filepath = os.path.join(directory, filename)
         if os.path.isfile(filepath):
             file_hash = calculate_file_hash(filepath)
