@@ -1,3 +1,4 @@
+#比较两个文件夹中的文件内容是否完全相同
 import os
 import hashlib
 from collections import defaultdict

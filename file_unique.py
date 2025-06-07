@@ -1,3 +1,4 @@
+# 遍历删除文件夹里面的重复文件
 import os
 import hashlib
 import argparse
