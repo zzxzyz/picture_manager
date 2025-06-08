@@ -1,4 +1,5 @@
 # 把文件夹下面所有的文件拷贝到一个新目录，并解决文件命名冲突
+# 已验证OK
 
 import os
 import shutil
@@ -20,9 +21,13 @@ def copy_files_with_conflict_resolution(src_dir, dest_dir):
     name_counter = defaultdict(int)
     conflict_report = {}
 
+    ignore_list = ['.DS_Store']
+
     # 递归遍历源目录
     for root, _, files in os.walk(src_dir):
         for filename in files:
+            if filename in ignore_list:
+                continue
             src_path = os.path.join(root, filename)
             
             # 生成基本目标路径
