@@ -116,10 +116,6 @@ def mere_all_files(source_dir: str, dest_dir: str):
     report_str = generate_conflict_report(report)
     logger.info("操作完成! 文件复制统计:")
     logger.info(report_str)
-    
-    # 同时在控制台输出报告
-    print("\n操作完成! 详细日志已保存到 merge_all.log")
-    print(report_str)
 
 
 def calculate_md5(filepath):
@@ -132,6 +128,7 @@ def calculate_md5(filepath):
         return hash_md5.hexdigest()
     except (IOError, PermissionError):
         return None
+
 
 def find_duplicate_files(directory):
     """查找并分组重复文件"""
@@ -170,32 +167,32 @@ def delete_duplicates(duplicates, simulate=False):
 
 def find_and_delete_duplicates(source_dir, simulate=False):
     if not os.path.isdir(source_dir):
-        print("错误: 目录不存在")
+        logger.info("错误: 目录不存在")
         return
 
-    print(f"扫描目录: {source_dir}")
+    logger.info(f"扫描目录: {source_dir}")
     duplicates = find_duplicate_files(source_dir)
     
     if not duplicates:
-        print("✅ 未发现重复文件")
+        logger.info("✅ 未发现重复文件")
         return
 
     # 打印重复文件分组
-    print("\n发现重复文件组:")
+    logger.info("发现重复文件组:")
     for i, (md5, files) in enumerate(duplicates.items(), 1):
-        print(f"\n组 #{i} (MD5: {md5}):")
+        logger.info(f"组 #{i} (MD5: {md5}):")
         for f in sorted(files):
-            print(f"  - {os.path.basename(f)}")
+            logger.info(f"  - {os.path.basename(f)}")
 
     # 删除重复文件
-    print("\n处理重复文件...")
+    logger.info("处理重复文件...")
     log = delete_duplicates(duplicates, simulate=simulate)
     
-    print("\n操作日志:")
+    logger.info("操作日志:")
     for entry in log:
-        print(entry)
+        logger.info(entry)
     
-    print(f"\n总计: 发现 {len(duplicates)} 组重复文件，已处理 {len(log)} 个重复项")
+    logger.info(f"总计: 发现 {len(duplicates)} 组重复文件，已处理 {len(log)} 个重复项")
 
 
 # 支持的图片和视频扩展名
@@ -231,15 +228,15 @@ def classify_files(directory):
         if ext in IMAGE_EXTENSIONS:
             dest = os.path.join(image_dir, filename)
             shutil.move(filepath, dest)
-            print(f"移动图片: {filename} -> image/")
+            logger.info(f"移动图片: {filename} -> image/")
             
         elif ext in VIDEO_EXTENSIONS:
             dest = os.path.join(video_dir, filename)
             shutil.move(filepath, dest)
-            print(f"移动视频: {filename} -> video/")
+            logger.info(f"移动视频: {filename} -> video/")
             
         else:
-            print(f"保留文件: {filename}")
+            logger.info(f"保留文件: {filename}")
 
 def get_exif_datetime(image_path):
     """
@@ -301,11 +298,11 @@ def classify_photos(source_path, camera_dir, photo_dir):
         if ext.lower() in image_exts:
             dt_str = get_exif_datetime(file_path)
             if dt_str:
-                logger.info(f"{filename} - 拍摄时间: {dt_str}")
+                logger.info(f"{filename} [拍摄时间: {dt_str}] -> {camera_dir}")
                 target_path = os.path.join(camera_dir, filename)
                 os.rename(file_path, target_path)
             else:
-                logger.info(f"{filename} - 无拍摄时间")
+                logger.info(f"{filename} [拍摄时间:无] -> {photo_dir}")
                 target_path = os.path.join(photo_dir, filename)
                 os.rename(file_path, target_path)
     
@@ -324,11 +321,14 @@ def rename_photos(camera_dir):
     existing_names = camera_files.copy()
     renamed_count = 0
     skipped_count = 0
-    
+    ignore_list = ['.DS_Store']
     for filename in camera_files:
         file_path = os.path.join(camera_dir, filename)
         if not os.path.isfile(file_path):
             continue
+      
+        if filename in ignore_list:
+          continue
             
         dt_str = get_exif_datetime(file_path)
         if not dt_str:
@@ -395,15 +395,15 @@ def classify_and_rename_photos(source_path):
     
     # 执行处理步骤
     classify_photos(source_path, camera_dir, photo_dir)  # 步骤1
+    logger.info("==================================\n\n")
     
-    # 步骤2: 进入camera目录
-    os.chdir(camera_dir)
-    logger.info(f"当前工作目录: {camera_dir}")
+    # 步骤3
+    rename_photos(camera_dir) 
+    logger.info("==================================\n\n")
     
-    rename_photos(camera_dir)  # 步骤3
-    group_by_year(camera_dir)  # 步骤4
-    
-    logger.info("照片整理完成!")
+    # # 步骤4
+    # group_by_year(camera_dir)  
+    # logger.info("==================================\n\n")
 
 
 def main():
@@ -435,8 +435,18 @@ def main():
     
     # 分类和重命名文件
     image_path = os.path.join(target_path, "image")
-    logger.info(f"分类和重命名文件: {image_path}")
     classify_and_rename_photos(image_path)
+    
+    ## 遍历target_path目录下的所有子目录
+    # for root, dirs, files in os.walk(target_path):
+    #     for dir_name in dirs:
+    #         dir_path = os.path.join(root, dir_name)
+    #         if os.path.isdir(dir_path):
+    #             logger.info(f"处理子目录: {dir_path}")
+    #             find_and_delete_duplicates(dir_path)
+  
+    # logger.info("==================================\n\n")
+    logger.info("照片整理完成!")
 
 
 if __name__ == "__main__":
