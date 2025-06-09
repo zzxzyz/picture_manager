@@ -16,6 +16,7 @@ from collections import defaultdict
 import hashlib
 import logging
 import shutil
+import subprocess
 import sys
 import os
 import os.path
@@ -60,7 +61,8 @@ def copy_files_with_conflict_resolution(src_dir, dest_dir):
             
             # 生成基本目标路径
             base_name, ext = os.path.splitext(filename)
-            dest_name = filename
+            ext = ext.lower()
+            dest_name = f"{base_name}{ext}"
             conflict_level = 0
             
             # 处理文件名冲突
@@ -458,9 +460,52 @@ def classify_and_rename_photos(source_path):
     rename_photos(camera_dir) 
     logger.info("==================================\n\n")
     
+    # 新增步骤：设置照片创建时间为拍摄时间
+    # logger.info(f"设置照片创建时间为拍摄时间: {camera_dir}")
+    # set_creation_time_for_photos(camera_dir)
+    # logger.info("==================================\n\n")
+    
     # 步骤4
-    group_by_year(camera_dir)  
-    logger.info("==================================\n\n")
+    # group_by_year(camera_dir)  
+    # logger.info("==================================\n\n")
+
+
+def set_file_creation_date(filepath, dt_str):
+    """
+    设置文件的创建时间为指定的日期时间字符串（格式：%Y:%m:%d %H:%M:%S）
+    参数:
+        filepath: 文件路径
+        dt_str: 日期时间字符串，格式为"%Y:%m:%d %H:%M:%S"
+    """
+    try:
+        # 将字符串转换为datetime对象
+        dt_obj = datetime.strptime(dt_str, "%Y:%m:%d %H:%M:%S")
+        # 转换为时间戳
+        timestamp = dt_obj.timestamp()
+        # 修改文件的创建时间和修改时间
+        os.utime(filepath, (timestamp, timestamp))
+        logger.info(f"设置创建时间成功: {filepath} -> {dt_str}")
+        return True
+    except Exception as e:
+        logger.error(f"设置创建时间失败: {filepath} - {str(e)}")
+        return False
+
+
+def set_creation_time_for_photos(directory):
+    """
+    递归遍历目录，为每张照片设置创建时间为拍摄时间
+    """
+    for root, _, files in os.walk(directory):
+        for filename in files:
+            filepath = os.path.join(root, filename)
+            # 检查文件扩展名是否为图片
+            _, ext = os.path.splitext(filename)
+            if ext.lower() not in IMAGE_EXTENSIONS:
+                continue
+            # 获取拍摄时间
+            dt_str = get_exif_datetime(filepath)
+            if dt_str:
+                set_file_creation_date(filepath, dt_str)
 
 
 def main():
