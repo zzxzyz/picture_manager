@@ -9,6 +9,7 @@
 
 import argparse
 from collections import defaultdict
+import hashlib
 import logging
 import shutil
 import sys
@@ -102,7 +103,7 @@ def generate_conflict_report(report):
     return report_str
   
 
-def mere_all(source_dir: str, dest_dir: str):
+def mere_all_files(source_dir: str, dest_dir: str):
       # 验证路径有效性
     if not os.path.isdir(source_dir):
         logger.error("错误: 源目录不存在或不是目录")
@@ -168,7 +169,7 @@ def delete_duplicates(duplicates, simulate=False):
     return deletion_log
   
 
-def do_file_unique(source_dir, simulate=False):
+def find_and_delete_duplicates(source_dir, simulate=False):
     if not os.path.isdir(source_dir):
         print("错误: 目录不存在")
         return
@@ -197,6 +198,49 @@ def do_file_unique(source_dir, simulate=False):
     
     print(f"\n总计: 发现 {len(duplicates)} 组重复文件，已处理 {len(log)} 个重复项")
 
+
+# 支持的图片和视频扩展名
+IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp'}
+VIDEO_EXTENSIONS = {'.mp4', '.mov', '.avi', '.mkv', '.flv', '.wmv', '.mpeg'}
+
+def classify_files(directory):
+    """
+    分类目录中的文件：
+    - 图片移动到image目录
+    - 视频移动到video目录
+    - 其他文件保留在根目录
+    """
+    # 创建目标目录
+    image_dir = os.path.join(directory, 'image')
+    video_dir = os.path.join(directory, 'video')
+    os.makedirs(image_dir, exist_ok=True)
+    os.makedirs(video_dir, exist_ok=True)
+    
+    # 遍历目录中的文件
+    for filename in os.listdir(directory):
+        filepath = os.path.join(directory, filename)
+        
+        # 跳过目录
+        if os.path.isdir(filepath):
+            continue
+            
+        # 获取文件扩展名
+        _, ext = os.path.splitext(filename)
+        ext = ext.lower()
+        
+        # 分类文件
+        if ext in IMAGE_EXTENSIONS:
+            dest = os.path.join(image_dir, filename)
+            shutil.move(filepath, dest)
+            print(f"移动图片: {filename} -> image/")
+            
+        elif ext in VIDEO_EXTENSIONS:
+            dest = os.path.join(video_dir, filename)
+            shutil.move(filepath, dest)
+            print(f"移动视频: {filename} -> video/")
+            
+        else:
+            print(f"保留文件: {filename}")
 
 def get_exif_datetime(image_path):
     """
@@ -335,18 +379,12 @@ def group_by_year(camera_dir):
                 moved_count += 1
     
     logger.info(f"年份分组完成! 已移动: {moved_count}张照片")
-
-
-def main():
-    parser = argparse.ArgumentParser(description='整理照片工具')
-    parser.add_argument('source_dir', type=str, help='源目录路径')
-    args = parser.parse_args()
     
-    source_path = os.path.abspath(args.source_dir)
-    if not os.path.isdir(source_path):
-        logger.error(f"目录不存在: {source_path}")
-        sys.exit(1)
     
+def classify_photos(source_path):
+    """
+    步骤1: 分类照片到camera和photo目录
+    """
     # 创建分类目录
     camera_dir = os.path.join(source_path, "camera")
     photo_dir = os.path.join(source_path, "photo")
@@ -367,6 +405,36 @@ def main():
     group_by_year(camera_dir)  # 步骤4
     
     logger.info("照片整理完成!")
+
+
+def main():
+    parser = argparse.ArgumentParser(description='整理照片工具')
+    parser.add_argument('source_dir', type=str, help='源目录路径')
+    parser.add_argument('target_dir', type=str, help='目标目录路径')
+    args = parser.parse_args()
+    
+    source_path = os.path.abspath(args.source_dir)
+    if not os.path.isdir(source_path):
+        logger.error(f"目录不存在: {source_path}")
+        sys.exit(1)
+    
+    # 合并所有文件
+    target_path = os.path.abspath(args.target_dir)
+    logger.info(f"开始合并所有文件: {source_path} → {target_path}")
+    mere_all_files(source_path, target_path)
+    
+    # 删除所有重复文件
+    logger.info(f"删除所有重复文件: {target_path}")
+    find_and_delete_duplicates(target_path)
+    
+    # 分类文件
+    logger.info(f"分类文件: {target_path}")
+    classify_files(target_path)
+    
+    # 分类和重命名文件
+    image_path = os.path.join(target_path, "image")
+    logger.info(f"分类和重命名文件: {image_path}")
+    classify_photos(image_path)
 
 
 if __name__ == "__main__":
