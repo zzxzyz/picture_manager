@@ -357,13 +357,12 @@ def get_media_datetime(filepath):
     return None
 
 
-def create_target_filename(dt_str, ext, existing_files):
+def create_target_filename(prefix, dt_obj, ext, existing_files):
     """
     创建目标文件名并解决冲突
     """
     try:
-        dt_obj = datetime.strptime(dt_str, "%Y:%m:%d %H:%M:%S")
-        base_name = f"IMG_{dt_obj.strftime('%Y%m%d_%H%M%S')}"
+        base_name = f"{prefix}_{dt_obj}"
         target_name = f"{base_name}{ext}"
         
         # 解决文件名冲突
@@ -374,7 +373,7 @@ def create_target_filename(dt_str, ext, existing_files):
             
         return target_name
     except ValueError:
-        logger.error(f"无效的日期时间格式: {dt_str}")
+        logger.error(f"无效的日期时间格式: {dt_obj}")
         return None
 
 
@@ -393,7 +392,7 @@ def classify_media(source_path, camera_dir, photo_dir):
             
         _, ext = os.path.splitext(filename)
         if ext.lower() in MEDIA_EXTENSIONS:
-            dt_str = get_exif_datetime(file_path)
+            dt_str = get_media_datetime(file_path)
             if dt_str:
                 logger.info(f"{filename} [拍摄时间: {dt_str}] -> {camera_dir}")
                 move_file_with_conflict_resolution(file_path, camera_dir)
@@ -427,7 +426,7 @@ def rename_media(camera_dir):
     
     for file_path in file_list:
         filename = os.path.basename(file_path)
-        dt_str = get_exif_datetime(file_path)
+        dt_str = get_media_datetime(file_path)
         if not dt_str:
             continue
         # 如果filename 已经包括dst_str，则跳过
@@ -437,7 +436,13 @@ def rename_media(camera_dir):
             continue
             
         _, ext = os.path.splitext(filename)
-        new_name = create_target_filename(dt_str, ext, os.listdir(camera_dir))
+        if ext in IMAGE_EXTENSIONS:
+            prefix = "IMG"
+        elif ext in VIDEO_EXTENSIONS:
+            prefix = "VID"
+        else:
+            continue
+        new_name = create_target_filename(prefix, dt_obj, ext, os.listdir(camera_dir))
         
         if not new_name:
             skipped_count += 1
@@ -467,7 +472,7 @@ def group_by_year(camera_dir):
         if not os.path.isfile(file_path):
             continue
             
-        if filename.startswith("IMG_") and len(filename) >= 12:
+        if (filename.startswith("IMG_") or filename.startswith("VID_")) and len(filename) >= 12:
             year = filename[4:8]  # 从 IMG_YYYYMMDD... 提取年份
             if year.isdigit():
                 year_dir = os.path.join(camera_dir, year)
@@ -579,6 +584,9 @@ def main():
     # 分类和重命名文件
     image_path = os.path.join(target_path, "image")
     classify_and_rename_media(image_path)
+    
+    video_path = os.path.join(target_path, "video")
+    classify_and_rename_media(video_path)
     
     # 遍历target_path目录下的所有子目录
     for root, dirs, files in os.walk(target_path):
