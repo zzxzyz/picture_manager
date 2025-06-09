@@ -393,7 +393,8 @@ def classify_media(source_path, camera_dir, photo_dir):
         _, ext = os.path.splitext(filename)
         if ext.lower() in MEDIA_EXTENSIONS:
             dt_str = get_media_datetime(file_path)
-            if dt_str:
+            dt_obj = format_shooting_time(dt_str=dt_str)
+            if dt_obj:
                 logger.info(f"{filename} [拍摄时间: {dt_str}] -> {camera_dir}")
                 move_file_with_conflict_resolution(file_path, camera_dir)
             else:
@@ -404,6 +405,18 @@ def classify_media(source_path, camera_dir, photo_dir):
     photo_count = len(os.listdir(photo_dir))
     logger.info(f"照片分类完成! camera: {camera_count}张, photo: {photo_count}张")
 
+
+def format_shooting_time(dt_str):
+    """
+    格式化拍摄时间
+    """
+    if dt_str is None:
+      return None
+    try:
+        return datetime.strptime(dt_str, "%Y:%m:%d %H:%M:%S").strftime('%Y%m%d_%H%M%S')
+    except ValueError:
+        logger.error(f"无效的日期时间格式: {dt_str}")
+        return None
 
 def rename_media(camera_dir):
     """
@@ -430,7 +443,9 @@ def rename_media(camera_dir):
         if not dt_str:
             continue
         # 如果filename 已经包括dst_str，则跳过
-        dt_obj = datetime.strptime(dt_str, "%Y:%m:%d %H:%M:%S").strftime('%Y%m%d_%H%M%S')
+        dt_obj = format_shooting_time(dt_str=dt_str)
+        if dt_obj is None:
+          continue
         if dt_obj in filename:
             logger.info(f"跳过重命名: {filename} 已符合命名规则, 拍摄时间: {dt_obj}")
             continue
