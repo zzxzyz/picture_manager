@@ -3,7 +3,20 @@
 
 import os
 import shutil
+import logging
 from collections import defaultdict
+
+# 配置日志
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('merge_all.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
 
 def copy_files_with_conflict_resolution(src_dir, dest_dir):
     """
@@ -54,25 +67,30 @@ def copy_files_with_conflict_resolution(src_dir, dest_dir):
                     "new_name": dest_name,
                     "conflict_level": conflict_level
                 }
+            
+            logger.info(f"复制: {src_path} -> {dest_path}")
     
     return conflict_report
 
-def print_conflict_report(report):
-    """打印冲突解决报告"""
+
+def generate_conflict_report(report):
+    """生成冲突解决报告"""
     if not report:
-        print("✅ 未发生文件名冲突")
-        return
+        return "✅ 未发生文件名冲突\n"
     
-    print("\n📊 文件名冲突解决报告:")
-    print("-" * 60)
-    print(f"{'源文件路径':<40} {'原文件名':<15} {'新文件名':<15} {'冲突级别'}")
-    print("-" * 60)
+    report_str = "\n📊 文件名冲突解决报告:\n"
+    report_str += "-" * 60 + "\n"
+    report_str += f"{'源文件路径':<40} {'原文件名':<15} {'新文件名':<15} {'冲突级别'}\n"
+    report_str += "-" * 60 + "\n"
     
     for src_path, info in report.items():
-        print(f"{src_path:<40} {info['original_name']:<15} {info['new_name']:<15} {info['conflict_level']}")
+        report_str += f"{src_path:<40} {info['original_name']:<15} {info['new_name']:<15} {info['conflict_level']}\n"
     
-    print("-" * 60)
-    print(f"总计解决 {len(report)} 个文件名冲突")
+    report_str += "-" * 60 + "\n"
+    report_str += f"总计解决 {len(report)} 个文件名冲突\n"
+    
+    return report_str
+
 
 if __name__ == "__main__":
     # 用户输入源目录和目标目录
@@ -81,13 +99,19 @@ if __name__ == "__main__":
 
     # 验证路径有效性
     if not os.path.isdir(source_dir):
-        print("错误: 源目录不存在或不是目录")
+        logger.error("错误: 源目录不存在或不是目录")
         exit(1)
     
-    print(f"\n开始复制文件: {source_dir} → {dest_dir}")
+    logger.info(f"\n开始复制文件: {source_dir} → {dest_dir}")
     report = copy_files_with_conflict_resolution(source_dir, dest_dir)
     
-    print("\n操作完成! 文件复制统计:")
-    print(f"源目录: {source_dir}")
-    print(f"目标目录: {dest_dir}")
-    print_conflict_report(report)
+    # 生成并记录报告
+    report_str = generate_conflict_report(report)
+    logger.info("\n操作完成! 文件复制统计:")
+    logger.info(f"源目录: {source_dir}")
+    logger.info(f"目标目录: {dest_dir}")
+    logger.info(report_str)
+    
+    # 同时在控制台输出报告
+    print("\n操作完成! 详细日志已保存到 merge_all.log")
+    print(report_str)
