@@ -381,7 +381,7 @@ def group_by_year(camera_dir):
     logger.info(f"年份分组完成! 已移动: {moved_count}张照片")
     
     
-def classify_photos(source_path):
+def classify_and_rename_photos(source_path):
     """
     步骤1: 分类照片到camera和photo目录
     """
@@ -434,7 +434,7 @@ def main():
     # 分类和重命名文件
     image_path = os.path.join(target_path, "image")
     logger.info(f"分类和重命名文件: {image_path}")
-    classify_photos(image_path)
+    classify_and_rename_photos(image_path)
 
 
 if __name__ == "__main__":
