@@ -317,35 +317,41 @@ def rename_photos(camera_dir):
     """
     logger.info(f"开始重命名照片: {camera_dir}")
     
-    camera_files = os.listdir(camera_dir)
-    existing_names = camera_files.copy()
+    # 第一步：收集所有需要处理的文件
+    file_list = []
+    ignore_list = ['.DS_Store']
+    for filename in os.listdir(camera_dir):
+        file_path = os.path.join(camera_dir, filename)
+        if not os.path.isfile(file_path) or filename in ignore_list:
+            continue
+        file_list.append(file_path)
+    
+    # 第二步：处理所有收集到的文件
     renamed_count = 0
     skipped_count = 0
-    ignore_list = ['.DS_Store']
-    for filename in camera_files:
-        file_path = os.path.join(camera_dir, filename)
-        if not os.path.isfile(file_path):
-            continue
-      
-        if filename in ignore_list:
-          continue
-            
+    
+    for file_path in file_list:
+        filename = os.path.basename(file_path)
         dt_str = get_exif_datetime(file_path)
         if not dt_str:
             continue
+        # 如果filename 已经包括dst_str，则跳过
+        dt_obj = datetime.strptime(dt_str, "%Y:%m:%d %H:%M:%S").strftime('%Y%m%d_%H%M%S')
+        if dt_obj in filename:
+            logger.info(f"跳过重命名: {filename} 已符合命名规则, 拍摄时间: {dt_obj}")
+            continue
             
         _, ext = os.path.splitext(filename)
-        # 检查是否需要重命名
-        new_name = create_target_filename(dt_str, ext, existing_names)
+        new_name = create_target_filename(dt_str, ext, os.listdir(camera_dir))
+        
         if not new_name:
+            skipped_count += 1
             continue
             
         if filename != new_name:
-            logger.info(f"重命名: {filename} -> {new_name}")
             new_path = os.path.join(camera_dir, new_name)
             os.rename(file_path, new_path)
-            existing_names.remove(filename)
-            existing_names.append(new_name)
+            logger.info(f"重命名: {filename} -> {new_name}")
             renamed_count += 1
         else:
             logger.info(f"跳过重命名: {filename} 已符合命名规则")
