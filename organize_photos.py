@@ -2,9 +2,13 @@
 """
 照片整理工具
 功能：
-1. 读取照片拍摄时间并分类到camera/photo目录
-2. 重命名照片为IMG_日期_时间格式
-3. 按年份分组照片
+1. 把源目录的所有文件拷贝到目标目录，并解决文件命名冲突
+2. 把目标目录中的文件按md5去重
+3. 把目标目录中的图片移动到image, 视频移动到video, 其它文件位置保持不变
+4. 把image目录下的照片分类到camera/photo目录，有拍摄时间的分类到camera, 没有拍摄时间的分类到photo
+5. 把image/camera目录下的照片用拍摄时间重命名， 照片名称格式为IMG_日期_时间格式.ext
+6. 把image/camera目录下的照片按年份分组照片, 比如把image/camera/2013, 把image/camera/2014
+7. 删除目录目录下所有子目录的重复文件
 """
 
 import argparse
@@ -474,6 +478,7 @@ def main():
             if os.path.isdir(dir_path):
                 logger.info(f"处理子目录: {dir_path}")
                 find_and_delete_duplicates(dir_path)
+                logger.info("==================================\n\n")
   
     logger.info("==================================\n\n")
     logger.info("照片整理完成!")
