@@ -90,14 +90,10 @@ def generate_conflict_report(report):
     report_str += f"总计解决 {len(report)} 个文件名冲突\n"
     
     return report_str
+  
 
-
-if __name__ == "__main__":
-    # 用户输入源目录和目标目录
-    source_dir = input("请输入源目录路径: ").strip()
-    dest_dir = input("请输入目标目录路径: ").strip()
-
-    # 验证路径有效性
+def mere_all(source_dir: str, dest_dir: str):
+      # 验证路径有效性
     if not os.path.isdir(source_dir):
         logger.error("错误: 源目录不存在或不是目录")
         exit(1)
@@ -115,3 +111,10 @@ if __name__ == "__main__":
     # 同时在控制台输出报告
     print("\n操作完成! 详细日志已保存到 merge_all.log")
     print(report_str)
+
+
+if __name__ == "__main__":
+    # 用户输入源目录和目标目录
+    source_dir = input("请输入源目录路径: ").strip()
+    dest_dir = input("请输入目标目录路径: ").strip()
+    mere_all(source_dir, dest_dir)
