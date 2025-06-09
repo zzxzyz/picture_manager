@@ -7,6 +7,7 @@ from PIL import Image, UnidentifiedImageError
 from PIL.ExifTags import TAGS
 import logging
 from datetime import datetime
+import re  # 添加正则表达式模块
 
 def get_shooting_time(file_path):
     """
@@ -27,8 +28,19 @@ def get_shooting_time(file_path):
                 for tag_id, value in exif_data.items():
                     tag_name = TAGS.get(tag_id, tag_id)
                     if tag_name == "DateTimeOriginal":
-                        # 转换EXIF时间字符串为datetime对象
-                        return datetime.strptime(value, "%Y:%m:%d %H:%M:%S")
+                        # 清理时间字符串中的非法字符
+                        clean_value = re.sub(r"[^0-9: ]", "", value)
+                        
+                        # 尝试解析时间
+                        try:
+                            return datetime.strptime(clean_value[:19], "%Y:%m:%d %H:%M:%S")
+                        except ValueError:
+                            # 尝试其他可能的格式
+                            try:
+                                return datetime.strptime(clean_value[:10], "%Y:%m:%d")
+                            except ValueError:
+                                logging.warning(f"无法解析 {file_path.name} 的拍摄时间: {value}")
+                                return None
         
         return None
     
