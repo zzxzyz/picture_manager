@@ -226,7 +226,8 @@ def find_and_delete_duplicates(source_dir, simulate=False):
 
 # 支持的图片和视频扩展名
 IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp'}
-VIDEO_EXTENSIONS = {'.mp4', '.mov', '.avi', '.mkv', '.flv', '.wmv', '.mpeg'}
+VIDEO_EXTENSIONS = {'.mp4', '.mov', '.avi', '.mkv', '.flv', '.wmv', '.mpeg', '.3gp', '.m4v'}
+MEDIA_EXTENSIONS = IMAGE_EXTENSIONS | VIDEO_EXTENSIONS
 
 #移动单个文件到指定目录，并解决文件名冲突的问题
 def move_file_with_conflict_resolution(source_path, destination_path):
@@ -314,6 +315,48 @@ def get_exif_datetime(image_path):
     return None
 
 
+def get_video_datetime(filepath):
+    """
+    获取视频的拍摄时间
+    返回格式: YYYY:MM:DD HH:MM:SS 或 None
+    """
+    try:
+        # 使用exiftool获取视频元数据
+        result = subprocess.run(
+            ['exiftool', '-CreateDate', '-d', '%Y:%m:%d %H:%M:%S', '-T', filepath],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        
+        # 处理输出结果
+        output = result.stdout.strip()
+        if output and output != '-':
+            # 处理可能的异常格式
+            clean_value = output.split('.')[0]  # 移除毫秒部分
+            clean_value = clean_value[:19]  # 确保长度正确
+            return clean_value
+    except subprocess.CalledProcessError as e:
+        logger.error(f"读取 {filepath} 拍摄时间失败: {str(e)}")
+    except Exception as e:
+        logger.error(f"处理 {filepath} 拍摄时间失败: {str(e)}")
+    return None
+
+
+def get_media_datetime(filepath):
+    """
+    获取媒体文件（图片或视频）的拍摄时间
+    """
+    _, ext = os.path.splitext(filepath)
+    ext = ext.lower()
+    
+    if ext in IMAGE_EXTENSIONS:
+        return get_exif_datetime(filepath)
+    elif ext in VIDEO_EXTENSIONS:
+        return get_video_datetime(filepath)
+    return None
+
+
 def create_target_filename(dt_str, ext, existing_files):
     """
     创建目标文件名并解决冲突
@@ -335,7 +378,7 @@ def create_target_filename(dt_str, ext, existing_files):
         return None
 
 
-def classify_photos(source_path, camera_dir, photo_dir):
+def classify_media(source_path, camera_dir, photo_dir):
     """
     步骤1: 分类照片到camera和photo目录
     """
@@ -365,7 +408,7 @@ def classify_photos(source_path, camera_dir, photo_dir):
     logger.info(f"照片分类完成! camera: {camera_count}张, photo: {photo_count}张")
 
 
-def rename_photos(camera_dir):
+def rename_media(camera_dir):
     """
     步骤3: 重命名照片文件
     """
@@ -439,13 +482,13 @@ def group_by_year(camera_dir):
     logger.info(f"年份分组完成! 已移动: {moved_count}张照片")
     
     
-def classify_and_rename_photos(source_path):
+def classify_and_rename_media(source_path):
     """
     步骤1: 分类照片到camera和photo目录
     """
     # 创建分类目录
     camera_dir = os.path.join(source_path, "camera")
-    photo_dir = os.path.join(source_path, "photo")
+    photo_dir = os.path.join(source_path, "no_camera")
     
     if not os.path.exists(camera_dir):
         os.makedirs(camera_dir)
@@ -453,11 +496,11 @@ def classify_and_rename_photos(source_path):
         os.makedirs(photo_dir)
     
     # 执行处理步骤
-    classify_photos(source_path, camera_dir, photo_dir)
+    classify_media(source_path, camera_dir, photo_dir)
     logger.info("==================================\n\n")
     
     # 步骤3
-    rename_photos(camera_dir) 
+    rename_media(camera_dir) 
     logger.info("==================================\n\n")
     
     # 新增步骤：设置照片创建时间为拍摄时间
@@ -537,7 +580,7 @@ def main():
     
     # 分类和重命名文件
     image_path = os.path.join(target_path, "image")
-    classify_and_rename_photos(image_path)
+    classify_and_rename_media(image_path)
     
     # 遍历target_path目录下的所有子目录
     for root, dirs, files in os.walk(target_path):
