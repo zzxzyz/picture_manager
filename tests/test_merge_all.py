@@ -1,6 +1,13 @@
 import os
 import shutil
 import unittest
+
+import io
+import sys
+
+# 添加父目录到sys.path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import merge_all
 
 class TestMergeAll(unittest.TestCase):
