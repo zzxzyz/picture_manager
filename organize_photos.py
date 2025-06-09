@@ -227,11 +227,17 @@ def classify_files(directory):
         # 分类文件
         if ext in IMAGE_EXTENSIONS:
             dest = os.path.join(image_dir, filename)
+            if os.path.exists(dest):
+              logger.warning(f"跳过已存在文件: {filename}")
+              continue
             shutil.move(filepath, dest)
             logger.info(f"移动图片: {filename} -> image/")
             
         elif ext in VIDEO_EXTENSIONS:
             dest = os.path.join(video_dir, filename)
+            if os.path.exists(dest):
+              logger.warning(f"跳过已存在文件: {filename}")
+              continue
             shutil.move(filepath, dest)
             logger.info(f"移动视频: {filename} -> video/")
             
@@ -300,10 +306,16 @@ def classify_photos(source_path, camera_dir, photo_dir):
             if dt_str:
                 logger.info(f"{filename} [拍摄时间: {dt_str}] -> {camera_dir}")
                 target_path = os.path.join(camera_dir, filename)
+                if os.path.exists(target_path):
+                  logger.warning(f"跳过已存在文件: {filename}")
+                  continue
                 os.rename(file_path, target_path)
             else:
                 logger.info(f"{filename} [拍摄时间:无] -> {photo_dir}")
                 target_path = os.path.join(photo_dir, filename)
+                if os.path.exists(target_path):
+                  logger.warning(f"跳过已存在文件: {filename}")
+                  continue
                 os.rename(file_path, target_path)
     
     camera_count = len(os.listdir(camera_dir))
@@ -379,6 +391,9 @@ def group_by_year(camera_dir):
                 if not os.path.exists(year_dir):
                     os.makedirs(year_dir)
                 target_path = os.path.join(year_dir, filename)
+                if os.path.exists(target_path):
+                    logger.warning(f"跳过已存在文件: {filename}")
+                    continue
                 logger.info(f"移动 {filename} -> {year}/")
                 os.rename(file_path, target_path)
                 moved_count += 1
@@ -400,7 +415,7 @@ def classify_and_rename_photos(source_path):
         os.makedirs(photo_dir)
     
     # 执行处理步骤
-    classify_photos(source_path, camera_dir, photo_dir)  # 步骤1
+    classify_photos(source_path, camera_dir, photo_dir)
     logger.info("==================================\n\n")
     
     # 步骤3
@@ -408,8 +423,8 @@ def classify_and_rename_photos(source_path):
     logger.info("==================================\n\n")
     
     # # 步骤4
-    # group_by_year(camera_dir)  
-    # logger.info("==================================\n\n")
+    group_by_year(camera_dir)  
+    logger.info("==================================\n\n")
 
 
 def main():
@@ -434,7 +449,7 @@ def main():
     find_and_delete_duplicates(target_path)
     logger.info("==================================\n\n")
     
-    # 分类文件
+    # # 分类文件
     logger.info(f"分类文件: {target_path}")
     classify_files(target_path)
     logger.info("==================================\n\n")
@@ -444,12 +459,12 @@ def main():
     classify_and_rename_photos(image_path)
     
     ## 遍历target_path目录下的所有子目录
-    # for root, dirs, files in os.walk(target_path):
-    #     for dir_name in dirs:
-    #         dir_path = os.path.join(root, dir_name)
-    #         if os.path.isdir(dir_path):
-    #             logger.info(f"处理子目录: {dir_path}")
-    #             find_and_delete_duplicates(dir_path)
+    for root, dirs, files in os.walk(target_path):
+        for dir_name in dirs:
+            dir_path = os.path.join(root, dir_name)
+            if os.path.isdir(dir_path):
+                logger.info(f"处理子目录: {dir_path}")
+                find_and_delete_duplicates(dir_path)
   
     # logger.info("==================================\n\n")
     logger.info("照片整理完成!")
