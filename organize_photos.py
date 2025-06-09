@@ -98,7 +98,7 @@ def generate_conflict_report(report):
         report_str += f"{src_path:<40} {info['original_name']:<15} {info['new_name']:<15} {info['conflict_level']}\n"
     
     report_str += "-" * 60 + "\n"
-    report_str += f"总计解决 {len(report)} 个文件名冲突\n"
+    report_str += f"总计解决 {len(report)} 个文件名冲突"
     
     return report_str
   
@@ -109,14 +109,12 @@ def mere_all_files(source_dir: str, dest_dir: str):
         logger.error("错误: 源目录不存在或不是目录")
         exit(1)
     
-    logger.info(f"\n开始复制文件: {source_dir} → {dest_dir}")
+    logger.info(f"开始复制文件: {source_dir} → {dest_dir}")
     report = copy_files_with_conflict_resolution(source_dir, dest_dir)
     
     # 生成并记录报告
     report_str = generate_conflict_report(report)
-    logger.info("\n操作完成! 文件复制统计:")
-    logger.info(f"源目录: {source_dir}")
-    logger.info(f"目标目录: {dest_dir}")
+    logger.info("操作完成! 文件复制统计:")
     logger.info(report_str)
     
     # 同时在控制台输出报告
@@ -147,6 +145,7 @@ def find_duplicate_files(directory):
                 md5_groups[md5].append(filepath)
     
     return {k: v for k, v in md5_groups.items() if len(v) > 1}
+
 
 def delete_duplicates(duplicates, simulate=False):
     """删除重复文件（保留每组第一个文件）"""
@@ -422,14 +421,17 @@ def main():
     target_path = os.path.abspath(args.target_dir)
     logger.info(f"开始合并所有文件: {source_path} → {target_path}")
     mere_all_files(source_path, target_path)
+    logger.info("==================================\n\n")
     
     # 删除所有重复文件
     logger.info(f"删除所有重复文件: {target_path}")
     find_and_delete_duplicates(target_path)
+    logger.info("==================================\n\n")
     
     # 分类文件
     logger.info(f"分类文件: {target_path}")
     classify_files(target_path)
+    logger.info("==================================\n\n")
     
     # 分类和重命名文件
     image_path = os.path.join(target_path, "image")
