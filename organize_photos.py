@@ -386,15 +386,13 @@ def classify_media(source_path, camera_dir, photo_dir):
     
     # 获取所有文件
     all_files = os.listdir(source_path)
-    image_exts = ['.jpg', '.jpeg', '.png', '.cr2', '.nef']
-    
     for filename in all_files:
         file_path = os.path.join(source_path, filename)
         if not os.path.isfile(file_path):
             continue
             
         _, ext = os.path.splitext(filename)
-        if ext.lower() in image_exts:
+        if ext.lower() in MEDIA_EXTENSIONS:
             dt_str = get_exif_datetime(file_path)
             if dt_str:
                 logger.info(f"{filename} [拍摄时间: {dt_str}] -> {camera_dir}")
