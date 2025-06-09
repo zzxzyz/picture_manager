@@ -89,7 +89,30 @@ def copy_files_with_conflict_resolution(src_dir, dest_dir):
 
 
 def generate_conflict_report(report):
-    """生成冲突解决报告"""
+    """
+    生成文件名冲突解决报告
+    
+    参数:
+        report (dict): 冲突解决报告字典，包含以下结构:
+            {
+                "源文件路径1": {
+                    "original_name": "原文件名",
+                    "new_name": "新文件名",
+                    "conflict_level": "冲突级别"
+                },
+                "源文件路径2": { ... }
+            }
+            
+    返回值:
+        str: 格式化的冲突解决报告字符串
+        
+    报告格式说明:
+        - 如果report为空，返回未发生冲突的消息
+        - 否则返回包含以下内容的表格化报告:
+            1. 表头: 源文件路径、原文件名、新文件名、冲突级别
+            2. 每行一个冲突解决记录
+            3. 底部显示冲突解决总数
+    """
     if not report:
         return "✅ 未发生文件名冲突\n"
     
