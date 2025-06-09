@@ -47,19 +47,15 @@ def delete_duplicates(duplicates, simulate=False):
                     deletion_log.append(f"删除失败 {filepath}: {str(e)}")
     
     return deletion_log
+  
 
-def main():
-    parser = argparse.ArgumentParser(description="查找并删除重复文件")
-    parser.add_argument("directory", help="要扫描的目录路径")
-    parser.add_argument("--simulate", action="store_true", help="模拟运行（不实际删除）")
-    args = parser.parse_args()
-
-    if not os.path.isdir(args.directory):
+def do_file_unique(source_dir, simulate=False):
+    if not os.path.isdir(source_dir):
         print("错误: 目录不存在")
         return
 
-    print(f"扫描目录: {args.directory}")
-    duplicates = find_duplicate_files(args.directory)
+    print(f"扫描目录: {source_dir}")
+    duplicates = find_duplicate_files(source_dir)
     
     if not duplicates:
         print("✅ 未发现重复文件")
@@ -74,13 +70,21 @@ def main():
 
     # 删除重复文件
     print("\n处理重复文件...")
-    log = delete_duplicates(duplicates, args.simulate)
+    log = delete_duplicates(duplicates, simulate=simulate)
     
     print("\n操作日志:")
     for entry in log:
         print(entry)
     
     print(f"\n总计: 发现 {len(duplicates)} 组重复文件，已处理 {len(log)} 个重复项")
+
+
+def main():
+    parser = argparse.ArgumentParser(description="查找并删除重复文件")
+    parser.add_argument("directory", help="要扫描的目录路径")
+    parser.add_argument("--simulate", action="store_true", help="模拟运行（不实际删除）")
+    args = parser.parse_args()
+    do_file_unique(args.directory, simulate=args.simulate)
 
 if __name__ == "__main__":
     main()
