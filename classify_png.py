@@ -1,32 +1,42 @@
+# 把照片分类为有拍摄时间和无拍摄时间两类，有拍摄时间的放在camera目录下，无拍摄时间的放在photo目录下
+
 import os
 import shutil
 from pathlib import Path
 from PIL import Image, UnidentifiedImageError
+from PIL.ExifTags import TAGS
 import logging
 from datetime import datetime
 
-def get_shoot_time(image_path):
-    """提取照片拍摄时间（EXIF DateTimeOriginal）"""
+def get_shooting_time(file_path):
+    """
+    获取照片拍摄时间（优先使用EXIF元数据）
+    
+    参数:
+        file_path (Path): 照片文件路径
+        
+    返回:
+        datetime对象: 拍摄时间 (成功时)
+        None: 无法获取拍摄时间时
+    """
     try:
-        with Image.open(image_path) as img:
-            exif_data = img.getexif()
-            
-            # 检查是否存在EXIF数据
-            if exif_data is None:
-                return None
-                
-            # 检查原始拍摄时间标签（36867）
-            if 36867 in exif_data:
-                return exif_data[36867]
-                
-            # 检查其他可能的时间标签
-            for tag in [306, 36868]:  # DateTime（306）和DateTimeDigitized（36868）
-                if tag in exif_data:
-                    return exif_data[tag]
-                    
+        # 尝试从EXIF元数据获取拍摄时间
+        with Image.open(file_path) as img:
+            exif_data = img._getexif()
+            if exif_data:
+                for tag_id, value in exif_data.items():
+                    tag_name = TAGS.get(tag_id, tag_id)
+                    if tag_name == "DateTimeOriginal":
+                        # 转换EXIF时间字符串为datetime对象
+                        return datetime.strptime(value, "%Y:%m:%d %H:%M:%S")
+        
         return None
+    
     except (UnidentifiedImageError, TypeError, ValueError, OSError) as e:
-        logging.warning(f"无法读取 {image_path} 的EXIF: {str(e)}")
+        logging.warning(f"无法读取 {file_path.name} 的EXIF: {str(e)}")
+        return None
+    except Exception as e:
+        logging.error(f"处理 {file_path.name} 时发生意外错误: {str(e)}")
         return None
 
 def classify_photos(source_dir):
@@ -61,7 +71,7 @@ def classify_photos(source_dir):
                 
             try:
                 # 获取拍摄时间并打印
-                shoot_time = get_shoot_time(file_path)
+                shoot_time = get_shooting_time(file_path)
                 time_str = shoot_time if shoot_time else "无拍摄时间"
                 print(f"{file_path.name} | 拍摄时间: {time_str}")
                 
