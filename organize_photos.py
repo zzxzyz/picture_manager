@@ -8,6 +8,7 @@ import argparse
 import logging
 import sys
 import os
+import re
 from collections import defaultdict
 import file_utils
 import media_utils
@@ -210,15 +211,15 @@ def classify_and_rename_media(source_path):
     """
     # 创建分类目录
     camera_dir = os.path.join(source_path, "camera")
-    photo_dir = os.path.join(source_path, "no_camera")
+    no_camera_dir = os.path.join(source_path, "no_camera")
     
     if not os.path.exists(camera_dir):
         os.makedirs(camera_dir)
-    if not os.path.exists(photo_dir):
-        os.makedirs(photo_dir)
+    if not os.path.exists(no_camera_dir):
+        os.makedirs(no_camera_dir)
     
     # 执行处理步骤
-    classify_media(source_path, camera_dir, photo_dir)
+    classify_media(source_path, camera_dir, no_camera_dir)
     logger.info("==================================\n\n")
     
     # 步骤3
@@ -233,6 +234,11 @@ def classify_and_rename_media(source_path):
     # 步骤4
     # group_by_year(camera_dir)  
     # logger.info("==================================\n\n")
+    
+    # 步骤: 重命名no_camera目录中的文件
+    logger.info(f"开始处理no_camera目录: {no_camera_dir}")
+    rename_no_camera_files(no_camera_dir)
+    logger.info("==================================\n\n")
 
 
 def main():
@@ -281,6 +287,139 @@ def main():
     logger.info("==================================\n\n")
     logger.info("照片整理完成!")
 
+
+def remane_file_with_confict_resolution(file_path, new_base_name, ext, target_dir):
+    """
+    解决文件名冲突并重命名文件
+    """
+    
+    new_name = f"{new_base_name}{ext}"
+    
+    # 解决文件名冲突
+    counter = 1
+    while os.path.exists(os.path.join(target_dir, new_name)):
+        new_name = f"{new_base_name}_{counter}{ext}"
+        counter += 1
+    
+    # 重命名文件
+    new_path = os.path.join(target_dir, new_name)
+    os.rename(file_path, new_path)
+    logger.info(f"重命名: {file_path} -> {new_name}")
+    
+
+def rename_no_camera_files(no_camera_dir):
+    """
+    重命名no_camera目录中的照片文件
+    规则1: 跳过符合IMG_YYYYMMDD_HHMMSS格式的文件
+    规则2: 处理YYYYMMDD_IMG_HHMM格式的文件（支持带括号）
+    规则3: 处理MTXX_YYYYMMDDHHMMSS格式的文件
+    规则4: 处理beauty_YYYYMMDDHHMMSS格式的文件
+    规则5: 处理pt_YYYY_MM_DD_HH_MM_SS格式的文件
+    """
+    logger.info(f"开始重命名no_camera目录中的照片: {no_camera_dir}")
+    
+    # 获取所有文件
+    file_list = []
+    ignore_list = ['.DS_Store']
+    for filename in os.listdir(no_camera_dir):
+        file_path = os.path.join(no_camera_dir, filename)
+        if not os.path.isfile(file_path) or filename in ignore_list:
+            continue
+        file_list.append(file_path)
+    
+    renamed_count = 0
+    skipped_count = 0
+    
+    for file_path in file_list:
+        filename = os.path.basename(file_path)
+        base_name, ext = os.path.splitext(filename)
+        ext = ext.lower()
+        
+        # 只处理图片文件
+        if ext not in IMAGE_EXTENSIONS:
+            continue
+        
+        # 规则1: 跳过符合IMG_YYYYMMDD_HHMMSS格式的文件
+        if re.match(r'^IMG_\d{8}_\d{6}$', base_name):
+            logger.info(f"跳过重命名(规则1): {filename} 已符合命名规则")
+            skipped_count += 1
+            continue
+        
+        # 规则2: 处理YYYYMMDD_IMG_HHMM格式的文件（支持带括号）
+        match = re.match(r'^(\d{8})_IMG_(\d{4}).*$', base_name)
+        if match:
+            date_part = match.group(1)
+            time_part = match.group(2)
+            new_base_name = f"IMG_{date_part}_{time_part}00"
+            remane_file_with_confict_resolution(file_path, new_base_name, ext, no_camera_dir)
+            renamed_count += 1
+            continue
+        
+        # 规则3: 处理MTXX_YYYYMMDDHHMMSS格式的文件
+        match = re.match(r'^MTXX_(\d{8})(\d{6})$', base_name)
+        if match:
+            date_part = match.group(1)
+            time_part = match.group(2)
+            new_base_name = f"IMG_{date_part}_{time_part}"
+            remane_file_with_confict_resolution(file_path, new_base_name, ext, no_camera_dir)
+            renamed_count += 1
+            continue
+        
+        # 规则4: 处理beauty_YYYYMMDDHHMMSS格式的文件
+        match = re.match(r'^beauty_(\d{8})(\d{6}).*$', base_name)
+        if match:
+            date_part = match.group(1)
+            time_part = match.group(2)
+            new_base_name = f"IMG_{date_part}_{time_part}"
+            remane_file_with_confict_resolution(file_path, new_base_name, ext, no_camera_dir)
+            renamed_count += 1
+            continue
+        
+        # 规则5: 处理pt_YYYY_MM_DD_HH_MM_SS格式的文件
+        match = re.match(r'^pt(\d{4})_(\d{2})_(\d{2})_(\d{2})_(\d{2})_(\d{2})$', base_name)
+        if match:
+            year = match.group(1)
+            month = match.group(2)
+            day = match.group(3)
+            hour = match.group(4)
+            minute = match.group(5)
+            second = match.group(6)
+            
+            date_part = f"{year}{month}{day}"
+            time_part = f"{hour}{minute}{second}"
+            new_base_name = f"IMG_{date_part}_{time_part}"
+            remane_file_with_confict_resolution(file_path, new_base_name, ext, no_camera_dir)
+            renamed_count += 1
+            continue
+        
+        #规则6: 其它照片，统一重命名为文件的修改时间
+        try:
+            mod_time = os.path.getmtime(file_path)
+            dt_obj = datetime.fromtimestamp(mod_time)
+            
+            # 格式化时间并处理异常
+            try:
+                formatted_time = dt_obj.strftime('%Y:%m:%d %H:%M:%S')
+                logger.info(f"{filename} [修改时间: {formatted_time}]")
+                
+                # 创建新文件名
+                date_str = dt_obj.strftime('%Y%m%d')
+                time_str = dt_obj.strftime('%H%M%S')
+                new_base_name = f"IMG_{date_str}_{time_str}"
+                remane_file_with_confict_resolution(file_path, new_base_name, ext, no_camera_dir)
+                renamed_count += 1
+            except Exception as e:
+                logger.error(f"格式化时间失败: {filename} - {str(e)}")
+                skipped_count += 1
+        except Exception as e:
+            logger.error(f"获取修改时间失败: {filename} - {str(e)}")
+            skipped_count += 1
+        
+        # 其他文件跳过
+        # logger.info(f"跳过重命名: {filename} 不符合任何规则")
+        # skipped_count += 1
+    
+    logger.info(f"no_camera目录重命名完成! 已重命名: {renamed_count}张, 跳过: {skipped_count}张")
 
 if __name__ == "__main__":
     main()
