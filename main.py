@@ -1,5 +1,6 @@
 import argparse
 import logging
+import os  # 添加os模块导入
 import sys
 from file_organizer import FileOrganizer
 

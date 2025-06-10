@@ -14,6 +14,10 @@ class FileOrganizer:
     def __init__(self, source_folder, target_folder):
         self.source_folder = source_folder
         self.target_folder = target_folder
+        
+        # 确保目标目录存在
+        os.makedirs(target_folder, exist_ok=True)
+        
         self.logger = self.setup_logger()
         
     def setup_logger(self):
@@ -124,7 +128,7 @@ class FileOrganizer:
             file_path = os.path.join(media_folder, file)
             if os.path.isfile(file_path):
                 # 获取创建时间
-                creation_time = get_creation_time(file_path)
+                creation_time = utils.get_creation_time(file_path)
                 
                 if creation_time:
                     # 移动到camera目录（保持原名）
@@ -151,11 +155,11 @@ class FileOrganizer:
             file_path = os.path.join(camera_dir, file)
             if os.path.isfile(file_path):
                 # 获取创建时间
-                creation_time = get_creation_time(file_path)
+                creation_time = utils.get_creation_time(file_path)
                 
                 if creation_time:
                     # 格式化时间
-                    time_str = format_time(creation_time, "%Y%m%d_%H%M%S")
+                    time_str = utils.format_time(creation_time, "%Y%m%d_%H%M%S")
                     
                     # 创建年份目录
                     year_dir = os.path.join(camera_dir, str(creation_time.year))

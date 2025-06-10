@@ -86,3 +86,6 @@
         # 处理no_camera目录中的文件
         self.process_no_camera_folder(no_camera_dir, media_type)
 ```
+
+
+# 优化package 导入，运行过程中出现了很多错误
