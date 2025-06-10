@@ -13,9 +13,13 @@ from media_utils import IMAGE_EXTENSIONS, get_exif_datetime
 
 logger = logging.getLogger(__name__)
 
-def copy_files_with_conflict_resolution(src_dir, dest_dir):
+def copy_files_with_conflict_resolution(src_dir, dest_dir, file_types=None):
     """
     递归复制所有文件到目标目录，解决文件名冲突
+    
+    :param src_dir: 源目录
+    :param dest_dir: 目标目录
+    :param file_types: 允许的文件扩展名列表（例如 ['.jpg', '.png']），如果为空或None则不过滤
     """
     # 创建目标目录（如果不存在）
     os.makedirs(dest_dir, exist_ok=True)
@@ -31,11 +35,13 @@ def copy_files_with_conflict_resolution(src_dir, dest_dir):
         for filename in files:
             if filename in ignore_list:
                 continue
+            base_name, ext = os.path.splitext(filename)
+            ext = ext.lower()
+            if file_types and ext not in file_types:
+                continue
             src_path = os.path.join(root, filename)
             
             # 生成基本目标路径
-            base_name, ext = os.path.splitext(filename)
-            ext = ext.lower()
             dest_name = f"{base_name}{ext}"
             conflict_level = 0
             

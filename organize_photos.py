@@ -52,7 +52,7 @@ def mere_all_files(source_dir: str, dest_dir: str):
         exit(1)
     
     logger.info(f"开始复制文件: {source_dir} → {dest_dir}")
-    report = copy_files_with_conflict_resolution(source_dir, dest_dir)
+    report = copy_files_with_conflict_resolution(source_dir, dest_dir, MEDIA_EXTENSIONS)
     
     # 生成并记录报告
     report_str = generate_conflict_report(report)
