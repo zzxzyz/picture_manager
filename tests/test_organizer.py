@@ -4,7 +4,8 @@ import shutil
 import logging
 from datetime import datetime
 from unittest.mock import patch, MagicMock
-from ..file_organizer import FileOrganizer
+# 修复导入路径
+from file_organizer import FileOrganizer
 
 class TestFileOrganizer(unittest.TestCase):
     def setUp(self):

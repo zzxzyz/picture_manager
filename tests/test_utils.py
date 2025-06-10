@@ -3,7 +3,8 @@ import os
 import shutil
 from datetime import datetime
 from unittest.mock import patch
-from ..utils import calculate_md5, get_creation_time, safe_copy, format_time
+# 修复导入路径
+from utils import calculate_md5, get_creation_time, safe_copy, format_time
 
 class TestUtils(unittest.TestCase):
     def setUp(self):

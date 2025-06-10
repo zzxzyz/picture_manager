@@ -1,6 +1,8 @@
+import datetime
 import os
 import logging
-from .utils import calculate_md5, get_creation_time, safe_copy, format_time
+import shutil
+import utils
 
 # 支持的图片和视频扩展名
 SUPPORTED_EXTENSIONS = {
@@ -54,7 +56,7 @@ class FileOrganizer:
                 
                 # 检查文件类型
                 if any(ext in exts for exts in SUPPORTED_EXTENSIONS.values()):
-                    safe_copy(file_path, self.target_folder)
+                    utils.safe_copy(file_path, self.target_folder)
                     self.logger.info(f"已复制: {file}")
         
         self.logger.info("文件复制完成")
@@ -68,7 +70,7 @@ class FileOrganizer:
         for file in os.listdir(folder):
             file_path = os.path.join(folder, file)
             if os.path.isfile(file_path):
-                file_md5 = calculate_md5(file_path)
+                file_md5 = utils.calculate_md5(file_path)
                 
                 if file_md5 in md5_dict:
                     duplicates.append(file_path)
@@ -117,9 +119,36 @@ class FileOrganizer:
         os.makedirs(camera_dir, exist_ok=True)
         os.makedirs(no_camera_dir, exist_ok=True)
         
-        # 处理每个文件
+        # 第一步：先统一移动文件到对应目录
         for file in os.listdir(media_folder):
             file_path = os.path.join(media_folder, file)
+            if os.path.isfile(file_path):
+                # 获取创建时间
+                creation_time = get_creation_time(file_path)
+                
+                if creation_time:
+                    # 移动到camera目录（保持原名）
+                    dest_path = os.path.join(camera_dir, file)
+                    shutil.move(file_path, dest_path)
+                    self.logger.info(f"已移动至camera目录: {file}")
+                else:
+                    # 移动到no_camera目录（保持原名）
+                    dest_path = os.path.join(no_camera_dir, file)
+                    shutil.move(file_path, dest_path)
+                    self.logger.info(f"已移动至no_camera目录: {file}")
+        
+        # 第二步：处理camera目录中的文件（重命名和组织）
+        self.process_camera_folder(camera_dir, media_type)
+        
+        # 第三步：处理no_camera目录中的文件
+        self.process_no_camera_folder(no_camera_dir, media_type)
+    
+    def process_camera_folder(self, camera_dir, media_type):
+        """处理camera目录中的文件，按拍摄时间重命名并组织到年份子目录"""
+        self.logger.info(f"处理camera目录: {camera_dir}")
+        
+        for file in os.listdir(camera_dir):
+            file_path = os.path.join(camera_dir, file)
             if os.path.isfile(file_path):
                 # 获取创建时间
                 creation_time = get_creation_time(file_path)
@@ -132,19 +161,17 @@ class FileOrganizer:
                     year_dir = os.path.join(camera_dir, str(creation_time.year))
                     os.makedirs(year_dir, exist_ok=True)
                     
-                    # 重命名并移动文件
+                    # 重命名文件
                     prefix = "IMG_" if media_type == "image" else "VID_"
                     new_name = f"{prefix}{time_str}{os.path.splitext(file)[1]}"
                     new_path = os.path.join(year_dir, new_name)
-                    os.rename(file_path, new_path)
-                    self.logger.info(f"已重命名并移动: {file} -> {new_path}")
+                    
+                    # 移动并重命名
+                    shutil.move(file_path, new_path)
+                    self.logger.info(f"已重命名并移动: {file} -> {new_name}")
                 else:
-                    # 移动到no_camera目录
-                    os.rename(file_path, os.path.join(no_camera_dir, file))
-                    self.logger.info(f"无法获取拍摄时间，移动到no_camera: {file}")
-        
-        # 处理no_camera目录中的文件
-        self.process_no_camera_folder(no_camera_dir, media_type)
+                    # 虽然不太可能发生，但安全处理
+                    self.logger.warning(f"文件 {file} 在camera目录中但无法获取拍摄时间")
     
     def process_no_camera_folder(self, no_camera_dir, media_type):
         """处理无法获取拍摄时间的文件"""
@@ -158,18 +185,20 @@ class FileOrganizer:
                 
                 # 使用文件修改时间作为后备
                 mod_time = datetime.fromtimestamp(os.path.getmtime(file_path))
-                time_str = format_time(mod_time, "%Y%m%d_%H%M%S")
+                time_str = utils.format_time(mod_time, "%Y%m%d_%H%M%S")
                 
                 # 创建年份目录
                 year_dir = os.path.join(no_camera_dir, str(mod_time.year))
                 os.makedirs(year_dir, exist_ok=True)
                 
-                # 重命名并移动文件
+                # 重命名文件
                 prefix = "IMG_" if media_type == "image" else "VID_"
                 new_name = f"{prefix}{time_str}{os.path.splitext(file)[1]}"
                 new_path = os.path.join(year_dir, new_name)
-                os.rename(file_path, new_path)
-                self.logger.info(f"已重命名并移动(使用修改时间): {file} -> {new_path}")
+                
+                # 移动并重命名
+                shutil.move(file_path, new_path)
+                self.logger.info(f"已重命名并移动(使用修改时间): {file} -> {new_name}")
     
     def organize(self):
         """执行完整的整理流程"""

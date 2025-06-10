@@ -41,3 +41,48 @@
 - 确保程序具有良好的异常处理机制，特别是当面对损坏的媒体文件或其他不可预见的问题时。
 - 测试用例应当涵盖正常情况以及边界条件，比如空文件夹、非媒体文件等情形。
 - Mermaid流程图应该清晰展示上述各个阶段之间的关系及其执行顺序。
+
+
+================================
+
+# 根据是否有拍摄时间，先统一移动文件到对应目录，然后在处理文件重命名
+```
+    def process_media_folder(self, media_folder, media_type):
+        """处理图片或视频文件夹"""
+        self.logger.info(f"处理 {media_type} 文件夹: {media_folder}")
+        
+        # 创建camera和no_camera子目录
+        camera_dir = os.path.join(media_folder, 'camera')
+        no_camera_dir = os.path.join(media_folder, 'no_camera')
+        os.makedirs(camera_dir, exist_ok=True)
+        os.makedirs(no_camera_dir, exist_ok=True)
+        
+        # 处理每个文件
+        for file in os.listdir(media_folder):
+            file_path = os.path.join(media_folder, file)
+            if os.path.isfile(file_path):
+                # 获取创建时间
+                creation_time = get_creation_time(file_path)
+                
+                if creation_time:
+                    # 格式化时间
+                    time_str = format_time(creation_time, "%Y%m%d_%H%M%S")
+                    
+                    # 创建年份目录
+                    year_dir = os.path.join(camera_dir, str(creation_time.year))
+                    os.makedirs(year_dir, exist_ok=True)
+                    
+                    # 重命名并移动文件
+                    prefix = "IMG_" if media_type == "image" else "VID_"
+                    new_name = f"{prefix}{time_str}{os.path.splitext(file)[1]}"
+                    new_path = os.path.join(year_dir, new_name)
+                    os.rename(file_path, new_path)
+                    self.logger.info(f"已重命名并移动: {file} -> {new_path}")
+                else:
+                    # 移动到no_camera目录
+                    os.rename(file_path, os.path.join(no_camera_dir, file))
+                    self.logger.info(f"无法获取拍摄时间，移动到no_camera: {file}")
+        
+        # 处理no_camera目录中的文件
+        self.process_no_camera_folder(no_camera_dir, media_type)
+```
