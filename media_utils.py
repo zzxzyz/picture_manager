@@ -9,6 +9,8 @@ import logging
 from PIL import Image, ExifTags
 from datetime import datetime
 
+from file_utils import create_target_filename, move_file_with_conflict_resolution
+
 logger = logging.getLogger(__name__)
 
 # 支持的图片和视频扩展名
