@@ -439,6 +439,13 @@ def rename_media(camera_dir):
     
     for file_path in file_list:
         filename = os.path.basename(file_path)
+        _, ext = os.path.splitext(filename)
+        if ext in IMAGE_EXTENSIONS:
+            prefix = "IMG"
+        elif ext in VIDEO_EXTENSIONS:
+            prefix = "VID"
+        else:
+            continue
         dt_str = get_media_datetime(file_path)
         if not dt_str:
             continue
@@ -446,16 +453,9 @@ def rename_media(camera_dir):
         dt_obj = format_shooting_time(dt_str=dt_str)
         if dt_obj is None:
           continue
-        if dt_obj in filename:
+        expeted_name = f"{prefix}_{dt_obj}"
+        if expeted_name in filename:
             logger.info(f"跳过重命名: {filename} 已符合命名规则, 拍摄时间: {dt_obj}")
-            continue
-            
-        _, ext = os.path.splitext(filename)
-        if ext in IMAGE_EXTENSIONS:
-            prefix = "IMG"
-        elif ext in VIDEO_EXTENSIONS:
-            prefix = "VID"
-        else:
             continue
         new_name = create_target_filename(prefix, dt_obj, ext, os.listdir(camera_dir))
         
