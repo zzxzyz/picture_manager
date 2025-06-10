@@ -405,7 +405,7 @@ def rename_no_camera_files(no_camera_dir):
                 # 创建新文件名
                 date_str = dt_obj.strftime('%Y%m%d')
                 time_str = dt_obj.strftime('%H%M%S')
-                new_base_name = f"IMG_{date_str}_{time_str}"
+                new_base_name = f"IMG_NO_{date_str}_{time_str}"
                 remane_file_with_confict_resolution(file_path, new_base_name, ext, no_camera_dir)
                 renamed_count += 1
             except Exception as e:

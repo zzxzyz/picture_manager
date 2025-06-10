@@ -8,8 +8,9 @@ import subprocess
 import logging
 from PIL import Image, ExifTags
 from datetime import datetime
+import file_utils
 
-from file_utils import create_target_filename, move_file_with_conflict_resolution
+#from file_utils import create_target_filename, move_file_with_conflict_resolution
 
 logger = logging.getLogger(__name__)
 
@@ -99,10 +100,10 @@ def classify_media(source_path, camera_dir, photo_dir):
             dt_obj = format_shooting_time(dt_str=dt_str)
             if dt_obj:
                 logger.info(f"{filename} [拍摄时间: {dt_str}] -> {camera_dir}")
-                move_file_with_conflict_resolution(file_path, camera_dir)
+                file_utils.move_file_with_conflict_resolution(file_path, camera_dir)
             else:
                 logger.info(f"{filename} [拍摄时间:无] -> {photo_dir}")
-                move_file_with_conflict_resolution(file_path, photo_dir)
+                file_utils.move_file_with_conflict_resolution(file_path, photo_dir)
     
     camera_count = len(os.listdir(camera_dir))
     photo_count = len(os.listdir(photo_dir))
@@ -143,7 +144,7 @@ def rename_media(camera_dir):
             skipped_count += 1
             continue
             
-        new_name = create_target_filename(prefix, dt_obj, ext, os.listdir(camera_dir))
+        new_name = file_utils.create_target_filename(prefix, dt_obj, ext, os.listdir(camera_dir))
         if not new_name:
             skipped_count += 1
             continue
@@ -175,7 +176,7 @@ def group_by_year(camera_dir):
                 year_dir = os.path.join(camera_dir, year)
                 if not os.path.exists(year_dir):
                     os.makedirs(year_dir)
-                if move_file_with_conflict_resolution(file_path, year_dir):
+                if file_utils.move_file_with_conflict_resolution(file_path, year_dir):
                     moved_count += 1
     
     logger.info(f"年份分组完成! 已移动: {moved_count}个文件")
