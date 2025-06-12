@@ -62,10 +62,9 @@ def mere_all_files(source_dir: str, dest_dir: str):
 
 def classify_files(directory):
     """
-    分类目录中的文件：
+    分类图片和视频：
     - 图片移动到image目录
     - 视频移动到video目录
-    - 其他文件保留在根目录
     """
     # 创建目标目录
     image_dir = os.path.join(directory, 'image')
@@ -102,17 +101,9 @@ def classify_and_rename_media(source_path):
     """
     步骤1: 分类照片到camera和photo目录
     """
-    # 创建分类目录
-    camera_dir = os.path.join(source_path, "camera")
-    no_camera_dir = os.path.join(source_path, "no_camera")
-    
-    if not os.path.exists(camera_dir):
-        os.makedirs(camera_dir)
-    if not os.path.exists(no_camera_dir):
-        os.makedirs(no_camera_dir)
     
     # 执行处理步骤
-    media_utils.classify_media(source_path, camera_dir, no_camera_dir)
+    camera_dir, no_camera_dir = media_utils.classify_media(source_path)
     logger.info("==================================\n\n")
     
     # 步骤3

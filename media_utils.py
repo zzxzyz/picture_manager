@@ -86,38 +86,52 @@ def format_shooting_time(dt_str):
         return None
 
 
-def classify_media(source_path, camera_dir, no_camera_dir):
+def classify_media(source_path):
     """
-    步骤1: 分类照片到camera和photo目录
+    分类媒体文件到camera和no_camera目录
+    -有拍摄时间的文件放到camera目录
+    -没有拍摄时间的文件放到no_camera目录
     """
     logger.info(f"开始分类照片: {source_path}")
     
-    # 获取所有文件
-    all_files = os.listdir(source_path)
-    for filename in all_files:
-        file_path = os.path.join(source_path, filename)
-        if not os.path.isfile(file_path):
-            continue
-            
-        _, ext = os.path.splitext(filename)
-        if ext.lower() in MEDIA_EXTENSIONS:
-            dt_str = get_media_datetime(file_path)
-            dt_obj = format_shooting_time(dt_str=dt_str)
-            if dt_obj:
-                logger.info(f"{filename} [拍摄时间: {dt_str}] -> {camera_dir}")
-                file_utils.move_file_with_conflict_resolution(file_path, camera_dir)
-            else:
-                logger.info(f"{filename} [拍摄时间:无] -> {no_camera_dir}")
-                file_utils.move_file_with_conflict_resolution(file_path, no_camera_dir)
+        # 创建分类目录
+    camera_dir = os.path.join(source_path, "camera")
+    no_camera_dir = os.path.join(source_path, "no_camera")
     
-    camera_count = len(os.listdir(camera_dir))
-    no_camera_count = len(os.listdir(no_camera_dir))
+    if not os.path.exists(camera_dir):
+        os.makedirs(camera_dir)
+    if not os.path.exists(no_camera_dir):
+        os.makedirs(no_camera_dir)
+    
+    # 获取所有文件
+    camera_count = 0
+    no_camera_count = 0
+    exclude_dirs = ['camera', 'no_camera']
+    # 递归遍历目录
+    for root, dirs, files in os.walk(source_path):
+        dirs[:] = [d for d in dirs if d not in exclude_dirs]
+        for filename in files:
+          file_path = os.path.join(root, filename)
+          _, ext = os.path.splitext(filename)
+          if ext.lower() in MEDIA_EXTENSIONS:
+              dt_str = get_media_datetime(file_path)
+              dt_obj = format_shooting_time(dt_str=dt_str)
+              if dt_obj:
+                  logger.info(f"{filename} [拍摄时间: {dt_str}] -> {camera_dir}")
+                  file_utils.move_file_with_conflict_resolution(file_path, camera_dir)
+                  camera_count += 1
+              else:
+                  logger.info(f"{filename} [拍摄时间:无] -> {no_camera_dir}")
+                  file_utils.move_file_with_conflict_resolution(file_path, no_camera_dir)
+                  no_camera_count += 1
+    
     logger.info(f"照片分类完成! camera: {camera_count}张, no_camera: {no_camera_count}张")
+    return camera_dir, no_camera_dir
     
     
 def rename_media(camera_dir):
     """
-    步骤3: 重命名照片文件
+    重命名照片文件
     """
     logger.info(f"开始重命名目录: {camera_dir}")
     
