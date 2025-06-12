@@ -8,7 +8,7 @@ set -o pipefail
 
 readonly SOURCE_DIR="/Users/zhengjunming/Documents/mj_picture/original"
 readonly BACKUP_DIR="/Users/zhengjunming/Documents/mj_picture/backups"
-readonly DATETIME="$(date '+%Y-%m-%d_%H:%M:%S')"
+readonly DATETIME="$(date '+%Y%m%d_%H%M%S')"
 readonly BACKUP_PATH="${BACKUP_DIR}/${DATETIME}"
 readonly LATEST_LINK="${BACKUP_DIR}/latest"
 
