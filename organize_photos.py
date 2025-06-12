@@ -73,26 +73,30 @@ def classify_files(directory):
     os.makedirs(image_dir, exist_ok=True)
     os.makedirs(video_dir, exist_ok=True)
     
-    # 遍历目录中的文件
-    for filename in os.listdir(directory):
-        filepath = os.path.join(directory, filename)
-        
-        # 跳过目录
-        if os.path.isdir(filepath):
-            continue
-            
-        # 获取文件扩展名
-        _, ext = os.path.splitext(filename)
-        ext = ext.lower()
-        
-        # 分类文件
-        if ext in IMAGE_EXTENSIONS:
-            move_file_with_conflict_resolution(filepath, image_dir)
-            
-        elif ext in VIDEO_EXTENSIONS:
-            move_file_with_conflict_resolution(filepath, video_dir)
-        else:
-            logger.info(f"保留文件: {filename}")
+    image_count = 0
+    video_count = 0
+    exclude_dirs = ['image', 'video']
+    # 递归遍历目录
+    for root, dirs, files in os.walk(directory):
+        dirs[:] = [d for d in dirs if d not in exclude_dirs]
+        for filename in files:
+          filepath = os.path.join(root, filename)
+
+          # 获取文件扩展名
+          _, ext = os.path.splitext(filename)
+          ext = ext.lower()
+          
+          # 分类文件
+          if ext in IMAGE_EXTENSIONS:
+              move_file_with_conflict_resolution(filepath, image_dir)
+              image_count += 1
+          elif ext in VIDEO_EXTENSIONS:
+              move_file_with_conflict_resolution(filepath, video_dir)
+              video_count += 1
+          else:
+              logger.info(f"保留文件: {filename}")
+    logger.info(f"分类完成! 图片: {image_count}张, 视频: {video_count}张")
+
 
 def classify_media(source_path, camera_dir, photo_dir):
     """
@@ -119,8 +123,8 @@ def classify_media(source_path, camera_dir, photo_dir):
                 move_file_with_conflict_resolution(file_path, photo_dir)
     
     camera_count = len(os.listdir(camera_dir))
-    photo_count = len(os.listdir(photo_dir))
-    logger.info(f"照片分类完成! camera: {camera_count}张, photo: {photo_count}张")
+    no_camera_count = len(os.listdir(photo_dir))
+    logger.info(f"照片分类完成! camera: {camera_count}张, no_camera: {no_camera_count}张")
 
 
 def rename_media(camera_dir):
@@ -147,15 +151,15 @@ def rename_media(camera_dir):
         _, ext = os.path.splitext(filename)
         if ext in IMAGE_EXTENSIONS:
             prefix = "IMG"
-            file_pattern = r'^IMG_\d{8}_\d{6}$'
+            file_pattern = r'^IMG_\d{8}_\d{6}'
         elif ext in VIDEO_EXTENSIONS:
             prefix = "VID"
-            file_pattern = r'^VID_\d{8}_\d{6}$'
+            file_pattern = r'^VID_\d{8}_\d{6}'
         else:
             continue
         # 规则1: 跳过符合IMG_YYYYMMDD_HHMMSS格式的文件
         if re.match(file_pattern, filename):
-            logger.info(f"跳过重命名(规则1): {filename} 已符合命名规则")
+            logger.info(f"跳过重命名: {filename} 已符合命名规则")
             skipped_count += 1
             continue
         dt_str = get_media_datetime(file_path)
@@ -165,12 +169,7 @@ def rename_media(camera_dir):
         dt_obj = format_shooting_time(dt_str=dt_str)
         if dt_obj is None:
           continue
-        expeted_name = f"{prefix}_{dt_obj}"
-        if expeted_name in filename:
-            logger.info(f"跳过重命名: {filename} 已符合命名规则, 拍摄时间: {dt_obj}")
-            continue
         new_name = create_target_filename(prefix, dt_obj, ext, os.listdir(camera_dir))
-        
         if not new_name:
             skipped_count += 1
             continue
@@ -373,7 +372,7 @@ def rename_no_camera_files(no_camera_dir):
             continue
         
         # 规则1: 跳过符合IMG_YYYYMMDD_HHMMSS格式的文件
-        if re.match(r'^IMG_\d{8}_\d{6}$', base_name):
+        if re.match(r'^IMG_\d{8}_\d{6}', base_name):
             logger.info(f"跳过重命名(规则1): {filename} 已符合命名规则")
             skipped_count += 1
             continue
@@ -438,7 +437,7 @@ def rename_no_camera_files(no_camera_dir):
                 # 创建新文件名
                 date_str = dt_obj.strftime('%Y%m%d')
                 time_str = dt_obj.strftime('%H%M%S')
-                new_base_name = f"IMG_NO_{date_str}_{time_str}"
+                new_base_name = f"IMG_{date_str}_{time_str}_NO"
                 remane_file_with_confict_resolution(file_path, new_base_name, ext, no_camera_dir)
                 renamed_count += 1
             except Exception as e:
