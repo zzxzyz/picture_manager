@@ -260,6 +260,7 @@ def classify_and_rename_media(source_path):
     
     # 步骤4
     # group_by_year(camera_dir)  
+    group_by_year_month(camera_dir)
     # logger.info("==================================\n\n")
     
     # 步骤: 重命名no_camera目录中的文件
@@ -272,18 +273,22 @@ def main():
     parser = argparse.ArgumentParser(description='整理照片工具')
     parser.add_argument('source_dir', type=str, help='源目录路径')
     parser.add_argument('target_dir', type=str, help='目标目录路径')
+    
+    # 
+    parser.add_argument('--no-copy',  action='store_true', help='不复制文件（默认复制文件）')
     args = parser.parse_args()
+    logger.info(f"no_copy value: {args.no_copy}")
     
     source_path = os.path.abspath(args.source_dir)
     if not os.path.isdir(source_path):
         logger.error(f"目录不存在: {source_path}")
         sys.exit(1)
     
-    # 合并所有文件
     target_path = os.path.abspath(args.target_dir)
-    logger.info(f"开始合并所有文件: {source_path} → {target_path}")
-    mere_all_files(source_path, target_path)
-    logger.info("==================================\n\n")
+    # 合并所有文件
+    if not args.no_copy:
+        mere_all_files(source_path, target_path)
+        logger.info("==================================\n\n")
     
     # 删除所有重复文件
     logger.info(f"删除所有重复文件: {target_path}")
