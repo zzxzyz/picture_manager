@@ -260,7 +260,7 @@ def classify_and_rename_media(source_path):
     
     # 步骤4
     # group_by_year(camera_dir)  
-    group_by_year_month(camera_dir)
+    # group_by_year_month(camera_dir)
     # logger.info("==================================\n\n")
     
     # 步骤: 重命名no_camera目录中的文件
