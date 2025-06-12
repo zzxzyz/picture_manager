@@ -292,7 +292,7 @@ def main():
     
     # 删除所有重复文件
     logger.info(f"删除所有重复文件: {target_path}")
-    find_and_delete_duplicates(target_path)
+    find_and_delete_duplicates(target_path, recursive=True)
     logger.info("==================================\n\n")
     
     # 分类文件
@@ -308,13 +308,7 @@ def main():
     classify_and_rename_media(video_path)
     
     # 遍历target_path目录下的所有子目录
-    for root, dirs, files in os.walk(target_path):
-        for dir_name in dirs:
-            dir_path = os.path.join(root, dir_name)
-            if os.path.isdir(dir_path):
-                logger.info(f"处理子目录: {dir_path}")
-                find_and_delete_duplicates(dir_path)
-                logger.info("==================================\n\n")
+    find_and_delete_duplicates(target_path, recursive=True)
   
     logger.info("==================================\n\n")
     logger.info("照片整理完成!")

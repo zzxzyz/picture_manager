@@ -22,16 +22,32 @@ def calculate_md5(filepath):
         return None
 
 
-def find_duplicate_files(directory):
-    """查找并分组重复文件"""
+def find_duplicate_files(directory, recursive=False):
+    """查找并分组重复文件
+    
+    参数:
+        directory: 要查找的目录
+        recursive: 是否递归查找子文件夹，默认为False
+    """
     md5_groups = defaultdict(list)
     
-    for filename in os.listdir(directory):
-        filepath = os.path.join(directory, filename)
-        if os.path.isfile(filepath):
-            md5 = calculate_md5(filepath)
-            if md5:
-                md5_groups[md5].append(filepath)
+    if recursive:
+        # 递归遍历所有子文件夹
+        for root, _, files in os.walk(directory):
+            for filename in files:
+                filepath = os.path.join(root, filename)
+                if os.path.isfile(filepath):
+                    md5 = calculate_md5(filepath)
+                    if md5:
+                        md5_groups[md5].append(filepath)
+    else:
+        # 只处理当前目录
+        for filename in os.listdir(directory):
+            filepath = os.path.join(directory, filename)
+            if os.path.isfile(filepath):
+                md5 = calculate_md5(filepath)
+                if md5:
+                    md5_groups[md5].append(filepath)
     
     return {k: v for k, v in md5_groups.items() if len(v) > 1}
 
@@ -57,14 +73,14 @@ def delete_duplicates(duplicates, simulate=False):
     return deletion_log
   
 
-def find_and_delete_duplicates(source_dir, simulate=False):
+def find_and_delete_duplicates(source_dir, simulate=False, recursive=False):
     """查找并删除重复文件"""
     if not os.path.isdir(source_dir):
         logger.info("错误: 目录不存在")
         return
 
     logger.info(f"扫描目录: {source_dir}")
-    duplicates = find_duplicate_files(source_dir)
+    duplicates = find_duplicate_files(source_dir, recursive=recursive)
     
     if not duplicates:
         logger.info("✅ 未发现重复文件")
