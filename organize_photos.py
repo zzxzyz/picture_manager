@@ -147,9 +147,16 @@ def rename_media(camera_dir):
         _, ext = os.path.splitext(filename)
         if ext in IMAGE_EXTENSIONS:
             prefix = "IMG"
+            file_pattern = r'^IMG_\d{8}_\d{6}$'
         elif ext in VIDEO_EXTENSIONS:
             prefix = "VID"
+            file_pattern = r'^VID_\d{8}_\d{6}$'
         else:
+            continue
+        # 规则1: 跳过符合IMG_YYYYMMDD_HHMMSS格式的文件
+        if re.match(file_pattern, filename):
+            logger.info(f"跳过重命名(规则1): {filename} 已符合命名规则")
+            skipped_count += 1
             continue
         dt_str = get_media_datetime(file_path)
         if not dt_str:
