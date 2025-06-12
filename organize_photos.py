@@ -203,7 +203,34 @@ def group_by_year(camera_dir):
                   moved_count += 1
     
     logger.info(f"年份分组完成! 已移动: {moved_count}张照片")
+
+
+# 按年月分组，并创建对应的目录，目录格式为YYYY-MM
+def group_by_year_month(camera_dir):
+    """
+    步骤4: 按年月分组照片
+    """
+    logger.info(f"开始按年月分组照片: {camera_dir}")
     
+    moved_count = 0
+    for filename in os.listdir(camera_dir):
+        file_path = os.path.join(camera_dir, filename)
+        if not os.path.isfile(file_path):
+            continue
+            
+        if (filename.startswith("IMG_") or filename.startswith("VID_")) and len(filename) >= 12:
+            year = filename[4:8]  # 从 IMG_YYYYMMDD... 提取年份
+            month = filename[8:10]
+            if year.isdigit() and month.isdigit():
+                year_month_dir = os.path.join(camera_dir, f"{year}-{month}")
+                if not os.path.exists(year_month_dir):
+                    os.makedirs(year_month_dir)
+                is_moved = move_file_with_conflict_resolution(file_path, year_month_dir)
+                if is_moved:
+                  moved_count += 1
+    
+    logger.info(f"年月分组完成! 已移动: {moved_count}张照片")
+
     
 def classify_and_rename_media(source_path):
     """
