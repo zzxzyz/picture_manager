@@ -17,6 +17,11 @@ logger = logging.getLogger(__name__)
 IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp'}
 VIDEO_EXTENSIONS = {'.mp4', '.mov', '.avi', '.mkv', '.flv', '.wmv', '.mpeg', '.3gp', '.m4v'}
 
+# 定义文件名模式常量
+IMG_PATTERN = r'^IMG_\d{8}_\d{6}'
+VID_PATTERN = r'^VID_\d{8}_\d{6}'
+
+
 def get_exif_datetime(image_path):
     """
     获取照片的拍摄时间
@@ -131,10 +136,13 @@ def classify_media(source_path, file_types):
 def rename_media(camera_dir):
     """
     重命名照片文件
+    
+    Args:
+        camera_dir: 包含相机照片的目录路径
     """
     logger.info(f"开始重命名目录: {camera_dir}")
     
-    # 第一步：收集所有需要处理的文件
+    # 获取所有文件
     file_list = []
     ignore_list = ['.DS_Store']
     for filename in os.listdir(camera_dir):
@@ -143,39 +151,49 @@ def rename_media(camera_dir):
             continue
         file_list.append(file_path)
     
-    # 第二步：处理所有收集到的文件
     renamed_count = 0
     skipped_count = 0
     
     for file_path in file_list:
-        #logger.info(f"处理文件: {file_path}")
         filename = os.path.basename(file_path)
         _, ext = os.path.splitext(filename)
         ext = ext.lower()
-        if ext in IMAGE_EXTENSIONS:
-            prefix = "IMG"
-            file_pattern = r'^IMG_\d{8}_\d{6}'
-        elif ext in VIDEO_EXTENSIONS:
-            prefix = "VID"
-            file_pattern = r'^VID_\d{8}_\d{6}'
-        else:
+        
+        # 只处理图片和视频文件
+        if ext not in IMAGE_EXTENSIONS and ext not in VIDEO_EXTENSIONS:
             continue
-        # 规则1: 跳过符合IMG_YYYYMMDD_HHMMSS格式的文件
-        if re.match(file_pattern, filename):
+            
+        # 规则1: 跳过符合命名规则的文件
+        if re.match(IMG_PATTERN, filename) or re.match(VID_PATTERN, filename):
             logger.info(f"跳过重命名: {filename} 已符合命名规则")
             skipped_count += 1
             continue
+            
+        # 尝试获取拍摄时间
         dt_str = get_media_datetime(file_path)
         if not dt_str:
+            skipped_count += 1
             continue
-        # 如果filename 已经包括dst_str，则跳过
-        dt_obj = format_shooting_time(dt_str=dt_str)
-        if dt_obj is None:
-          continue
-        base_name = f"{prefix}_{dt_obj}"
-        target_file = os.path.join(camera_dir, f"{base_name}{ext}")
-        move_file_with_unique_name(file_path, target_file)
-        renamed_count += 1
+            
+        # 格式化时间
+        try:
+            dt_obj = format_shooting_time(dt_str=dt_str)
+            if dt_obj is None:
+                skipped_count += 1
+                continue
+                
+            prefix = "IMG" if ext in IMAGE_EXTENSIONS else "VID"
+            base_name = f"{prefix}_{dt_obj}"
+            target_file = os.path.join(camera_dir, f"{base_name}{ext}")
+            
+            if move_file_with_unique_name(file_path, target_file):
+                renamed_count += 1
+            else:
+                skipped_count += 1
+        except Exception as e:
+            logger.error(f"重命名文件失败: {filename}, 错误: {e}")
+            skipped_count += 1
+            
     logger.info(f"重命名完成! 已重命名: {renamed_count}张, 跳过: {skipped_count}张")
 
 

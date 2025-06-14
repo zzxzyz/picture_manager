@@ -97,15 +97,67 @@ def classify_and_rename_media(source_path, file_types):
     logger.info("==================================\n\n")
 
 
+def process_media_group(group: tuple, source_path: str, target_path: str, no_copy: bool) -> None:
+    """
+    处理特定媒体类型组（如图片或视频）
+    
+    Args:
+        group: 包含媒体类型名称和扩展名元组的元组
+        source_path: 源目录路径
+        target_path: 目标目录路径
+        no_copy: 是否跳过复制文件
+    """
+    child_name, file_types = group
+    logger.info(f'处理媒体类型: {child_name}, 文件类型: {file_types}')
+    
+    # 创建目标子目录
+    child_dir = os.path.join(target_path, child_name)
+    try:
+        os.makedirs(child_dir, exist_ok=True)
+    except OSError as e:
+        logger.error(f"创建目录失败: {child_dir}, 错误: {e}")
+        return
+
+    # 复制文件
+    if not no_copy:
+        try:
+            copy_files_by_types(source_path, child_dir, file_types=file_types)
+        except Exception as e:
+            logger.error(f"复制文件失败: {e}")
+        logger.info("==================================\n\n")
+
+    # 删除重复文件
+    logger.info(f"删除重复文件: {target_path}")
+    try:
+        find_and_delete_duplicates(target_path, recursive=True)
+    except Exception as e:
+        logger.error(f"删除重复文件失败: {e}")
+    logger.info("==================================\n\n")
+
+    # 移动文件
+    logger.info(f"移动文件到分类目录: {child_dir}")
+    try:
+        exclude_dirs = [child_name]
+        move_files_by_types(target_path, child_dir, file_types=file_types, exclude_dirs=exclude_dirs)
+    except Exception as e:
+        logger.error(f"移动文件失败: {e}")
+    logger.info("==================================\n\n")
+    
+    # 分类和重命名文件
+    try:
+        classify_and_rename_media(child_dir, file_types)
+    except Exception as e:
+        logger.error(f"分类和重命名失败: {e}")
+
+
 def main():
     parser = argparse.ArgumentParser(description='整理照片工具')
     parser.add_argument('source_dir', type=str, help='源目录路径')
     parser.add_argument('target_dir', type=str, help='目标目录路径')
+    parser.add_argument('--no-copy', action='store_true', help='不复制文件（默认复制文件）')
     
-    # 
-    parser.add_argument('--no-copy',  action='store_true', help='不复制文件（默认复制文件）')
     args = parser.parse_args()
-    logger.info(f"no_copy value: {args.no_copy}")
+    logger.info(f"参数设置: no_copy={args.no_copy}")
     
     source_path = os.path.abspath(args.source_dir)
     if not os.path.isdir(source_path):
@@ -113,36 +165,21 @@ def main():
         sys.exit(1)
     
     target_path = os.path.abspath(args.target_dir)
-    groups = [
-       ('image', IMAGE_EXTENSIONS),
-       ('video', VIDEO_EXTENSIONS),
+    os.makedirs(target_path, exist_ok=True)
+    
+    # 检查目标目录是否可写
+    if not os.access(target_path, os.W_OK):
+        logger.error(f"目标目录不可写: {target_path}")
+        sys.exit(1)
+    
+    media_groups = [
+        ('image', IMAGE_EXTENSIONS),
+        ('video', VIDEO_EXTENSIONS),
     ]
-    for group in groups:
-       # 创建目标目录
-       child_name = group[0]
-       file_types = group[1]
-       logger.info(f'handle child {child_name} file types {file_types}')
-       child_dir = os.path.join(target_path, child_name)
-       os.makedirs(child_dir, exist_ok=True)
-
-       # 拷贝文件
-       if not args.no_copy:
-        copy_files_by_types(source_path, child_dir, file_types=file_types)
-        logger.info("==================================\n\n")
-
-       # 删除所有重复文件
-       logger.info(f"删除所有重复文件: {target_path}")
-       find_and_delete_duplicates(target_path, recursive=True)
-       logger.info("==================================\n\n")
-
-       # 分类文件
-       logger.info(f"移动文件: {target_path}")
-       exclude_dirs = [child_name]
-       move_files_by_types(target_path, child_dir, file_types=file_types, exclude_dirs=exclude_dirs)
-       logger.info("==================================\n\n")
-       
-       # 分类和重命名文件
-       classify_and_rename_media(child_dir, file_types)
+    
+    for group in media_groups:
+        process_media_group(group, source_path, target_path, args.no_copy)
+    
     logger.info("照片整理完成!")
 
 
