@@ -10,9 +10,9 @@ import sys
 import os
 import re
 from collections import defaultdict
-import file_utils
-import media_utils
-import duplicate_utils
+from file_utils import *
+from media_utils import *
+from duplicate_utils import *
 from datetime import datetime
 
 # 确保logs目录存在
@@ -31,23 +31,6 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
-
-# 使用新模块中的函数
-copy_files_with_unique_name = file_utils.copy_files_with_unique_name
-generate_conflict_report = file_utils.generate_conflict_report
-move_file_with_unique_name = file_utils.move_file_with_unique_name
-calculate_md5 = duplicate_utils.calculate_md5
-find_duplicate_files = duplicate_utils.find_duplicate_files
-delete_duplicates = duplicate_utils.delete_duplicates
-find_and_delete_duplicates = duplicate_utils.find_and_delete_duplicates
-get_exif_datetime = media_utils.get_exif_datetime
-get_video_datetime = media_utils.get_video_datetime
-get_media_datetime = media_utils.get_media_datetime
-format_shooting_time = media_utils.format_shooting_time
-
-# 支持的图片和视频扩展名
-IMAGE_EXTENSIONS = media_utils.IMAGE_EXTENSIONS
-VIDEO_EXTENSIONS = media_utils.VIDEO_EXTENSIONS
 
 def copy_files_by_types(source_dir: str, dest_dir: str, file_types=None, exclude_dirs=None):
       # 验证路径有效性
@@ -98,20 +81,19 @@ def classify_and_rename_media(source_path, file_types):
     """
     
     # 执行处理步骤
-    camera_dir, no_camera_dir = media_utils.classify_media(source_path, file_types)
+    camera_dir, no_camera_dir = classify_media(source_path, file_types)
     logger.info("==================================\n\n")
     
     # 步骤3
-    media_utils.rename_media(camera_dir) 
+    rename_media(camera_dir) 
     logger.info("==================================\n\n")
     
     # # 步骤4
-    # #media_utils.group_by_year(camera_dir)  
-    # #media_utils.group_by_year_month(camera_dir)
-    # logger.info("==================================\n\n")
+    group_by_year_and_month(camera_dir, use_month=True)  
+    logger.info("==================================\n\n")
     
     # # 步骤: 重命名no_camera目录中的文件
-    media_utils.rename_no_camera_files(no_camera_dir)
+    rename_no_camera_files(no_camera_dir)
     logger.info("==================================\n\n")
 
 

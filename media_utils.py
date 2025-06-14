@@ -181,9 +181,22 @@ def rename_media(camera_dir):
     logger.info(f"重命名完成! 已重命名: {renamed_count}张, 跳过: {skipped_count}张")
 
 
-def group_by_year(camera_dir):
+def extract_year_month_from_filename(filename):
+    """
+    从文件名中提取年月（格式为YYYYMM）
+    文件名格式：IMG_YYYYMMDD_HHMMSS.jpg 或 VID_YYYYMMDD_HHMMSS.mp4
+    """
+    file_pattern = r'^(IMG|VID)_(\d{8})_(\d{6})'
+    result = re.match(file_pattern, filename)
+    if result:
+        date_str = result.group(2)  # 获取日期部分（YYYYMMDD）
+        return date_str  # 返回前6位（YYYYMM）
+    return None
+
+
+def group_by_year_and_month(camera_dir, use_month=False):
     """按年份分组媒体文件"""
-    logger.info(f"开始分组目录: {camera_dir}")
+    logger.info(f"开始分组: {camera_dir}")
     
     moved_count = 0
     for filename in os.listdir(camera_dir):
@@ -191,47 +204,24 @@ def group_by_year(camera_dir):
         if not os.path.isfile(file_path):
             continue
             
-        if (filename.startswith("IMG_") or filename.startswith("VID_")) and len(filename) >= 12:
-            year = filename[4:8]
-            if year.isdigit():
-                year_dir = os.path.join(camera_dir, year)
-                if not os.path.exists(year_dir):
-                    os.makedirs(year_dir)
-                target_file = os.path.join(year_dir, filename)
-                if file_utils.move_file_with_unique_name(file_path, target_file):
-                    moved_count += 1
+        # 使用新函数提取年月
+        year_month_day = extract_year_month_from_filename(filename)
+        if year_month_day:
+            year = year_month_day[:4]
+            month = year_month_day[4:6]
+            #day = year_month_day[6:8]
+            if use_month:
+                target_dir = os.path.join(camera_dir, f"{year}-{month}")
+            else:
+                # 只使用年份部分（前4位）
+                target_dir = os.path.join(camera_dir, year)
+                
+            os.makedirs(target_dir, exist_ok=True)
+            target_file = os.path.join(target_dir, filename)
+            if file_utils.move_file_with_unique_name(file_path, target_file):
+                moved_count += 1
     
-    logger.info(f"年份分组完成! 已移动: {moved_count}个文件")
-
-
-
-# 按年月分组，并创建对应的目录，目录格式为YYYY-MM
-def group_by_year_month(camera_dir):
-    """
-    步骤4: 按年月分组照片
-    """
-    logger.info(f"开始按年月分组照片: {camera_dir}")
-    
-    moved_count = 0
-    for filename in os.listdir(camera_dir):
-        file_path = os.path.join(camera_dir, filename)
-        if not os.path.isfile(file_path):
-            continue
-            
-        if (filename.startswith("IMG_") or filename.startswith("VID_")) and len(filename) >= 12:
-            year = filename[4:8]  # 从 IMG_YYYYMMDD... 提取年份
-            month = filename[8:10]
-            if year.isdigit() and month.isdigit():
-                year_month_dir = os.path.join(camera_dir, f"{year}-{month}")
-                if not os.path.exists(year_month_dir):
-                    os.makedirs(year_month_dir)
-                target_file = os.path.join(year_month_dir, filename)
-                is_moved = file_utils.move_file_with_unique_name(file_path, target_file)
-                if is_moved:
-                  moved_count += 1
-    
-    logger.info(f"年月分组完成! 已移动: {moved_count}张照片")
-
+    logger.info(f"分组完成! 已移动: {moved_count}个文件")
 
 
 def rename_no_camera_files(no_camera_dir):
