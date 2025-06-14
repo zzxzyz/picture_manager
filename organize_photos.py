@@ -147,9 +147,9 @@ def main():
         logger.info("==================================\n\n")
     
     # 删除所有重复文件
-    logger.info(f"删除所有重复文件: {target_path}")
-    find_and_delete_duplicates(target_path, recursive=True)
-    logger.info("==================================\n\n")
+    # logger.info(f"删除所有重复文件: {target_path}")
+    # find_and_delete_duplicates(target_path, recursive=True)
+    # logger.info("==================================\n\n")
     
     # 分类文件
     logger.info(f"分类文件: {target_path}")
@@ -164,9 +164,9 @@ def main():
     classify_and_rename_media(video_path)
     
     # 遍历target_path目录下的所有子目录
-    find_and_delete_duplicates(target_path, recursive=True)
-  
-    logger.info("==================================\n\n")
+    # find_and_delete_duplicates(target_path, recursive=True)
+    # logger.info("==================================\n\n")
+
     logger.info("照片整理完成!")
 
 
