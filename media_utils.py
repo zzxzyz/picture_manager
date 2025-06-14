@@ -172,7 +172,7 @@ def rename_media(camera_dir):
         if dt_obj is None:
           continue
         base_name = f"{prefix}_{dt_obj}"
-        remane_file_with_confict_resolution(file_path, base_name, ext, camera_dir)
+        rename_file_with_conflict_resolution(file_path, base_name, ext, camera_dir)
         renamed_count += 1
     logger.info(f"重命名完成! 已重命名: {renamed_count}张, 跳过: {skipped_count}张")
 
@@ -240,9 +240,9 @@ def set_creation_time_for_photos(directory):
                 file_utils.set_file_creation_date(filepath, dt_str)
 
 
-def remane_file_with_confict_resolution(file_path, new_base_name, ext, target_dir):
+def rename_file_with_conflict_resolution(file_path, new_base_name, ext, target_dir):
     """
-    解决文件名冲突并重命名文件
+    重命名文件并解决冲突
     """
     
     new_name = f"{new_base_name}{ext}"
@@ -303,7 +303,7 @@ def rename_no_camera_files(no_camera_dir):
             date_part = match.group(1)
             time_part = match.group(2)
             new_base_name = f"IMG_{date_part}_{time_part}00"
-            remane_file_with_confict_resolution(file_path, new_base_name, ext, no_camera_dir)
+            rename_file_with_conflict_resolution(file_path, new_base_name, ext, no_camera_dir)
             renamed_count += 1
             continue
         
@@ -313,7 +313,7 @@ def rename_no_camera_files(no_camera_dir):
             date_part = match.group(1)
             time_part = match.group(2)
             new_base_name = f"IMG_{date_part}_{time_part}"
-            remane_file_with_confict_resolution(file_path, new_base_name, ext, no_camera_dir)
+            rename_file_with_conflict_resolution(file_path, new_base_name, ext, no_camera_dir)
             renamed_count += 1
             continue
         
@@ -323,7 +323,7 @@ def rename_no_camera_files(no_camera_dir):
             date_part = match.group(1)
             time_part = match.group(2)
             new_base_name = f"IMG_{date_part}_{time_part}"
-            remane_file_with_confict_resolution(file_path, new_base_name, ext, no_camera_dir)
+            rename_file_with_conflict_resolution(file_path, new_base_name, ext, no_camera_dir)
             renamed_count += 1
             continue
         
@@ -340,7 +340,7 @@ def rename_no_camera_files(no_camera_dir):
             date_part = f"{year}{month}{day}"
             time_part = f"{hour}{minute}{second}"
             new_base_name = f"IMG_{date_part}_{time_part}"
-            remane_file_with_confict_resolution(file_path, new_base_name, ext, no_camera_dir)
+            rename_file_with_conflict_resolution(file_path, new_base_name, ext, no_camera_dir)
             renamed_count += 1
             continue
         
@@ -358,7 +358,7 @@ def rename_no_camera_files(no_camera_dir):
                 date_str = dt_obj.strftime('%Y%m%d')
                 time_str = dt_obj.strftime('%H%M%S')
                 new_base_name = f"IMG_{date_str}_{time_str}_NO"
-                remane_file_with_confict_resolution(file_path, new_base_name, ext, no_camera_dir)
+                rename_file_with_conflict_resolution(file_path, new_base_name, ext, no_camera_dir)
                 renamed_count += 1
             except Exception as e:
                 logger.error(f"格式化时间失败: {filename} - {str(e)}")
