@@ -89,8 +89,8 @@ def classify_and_rename_media(source_path, file_types):
     logger.info("==================================\n\n")
     
     # # 步骤4
-    group_by_year_and_month(camera_dir, use_month=True)  
-    logger.info("==================================\n\n")
+    #group_by_year_and_month(camera_dir, use_month=True)  
+    #logger.info("==================================\n\n")
     
     # # 步骤: 重命名no_camera目录中的文件
     rename_no_camera_files(no_camera_dir)

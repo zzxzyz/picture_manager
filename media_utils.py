@@ -9,9 +9,7 @@ import subprocess
 import logging
 from PIL import Image, ExifTags
 from datetime import datetime
-import file_utils
-
-#from file_utils import create_target_filename, move_file_with_conflict_resolution
+from file_utils import *
 
 logger = logging.getLogger(__name__)
 
@@ -118,12 +116,12 @@ def classify_media(source_path, file_types):
               if dt_obj:
                   logger.info(f"{filename} [拍摄时间: {dt_str}] -> {camera_dir}")
                   target_file = os.path.join(camera_dir, filename)
-                  file_utils.move_file_with_unique_name(file_path, target_file)
+                  move_file_with_unique_name(file_path, target_file)
                   camera_count += 1
               else:
                   logger.info(f"{filename} [拍摄时间:无] -> {no_camera_dir}")
                   target_file = os.path.join(no_camera_dir, filename)
-                  file_utils.move_file_with_unique_name(file_path, target_file)
+                  move_file_with_unique_name(file_path, target_file)
                   no_camera_count += 1
     
     logger.info(f"照片分类完成! camera: {camera_count}张, no_camera: {no_camera_count}张")
@@ -176,7 +174,7 @@ def rename_media(camera_dir):
           continue
         base_name = f"{prefix}_{dt_obj}"
         target_file = os.path.join(camera_dir, f"{base_name}{ext}")
-        file_utils.move_file_with_unique_name(file_path, target_file)
+        move_file_with_unique_name(file_path, target_file)
         renamed_count += 1
     logger.info(f"重命名完成! 已重命名: {renamed_count}张, 跳过: {skipped_count}张")
 
@@ -218,7 +216,7 @@ def group_by_year_and_month(camera_dir, use_month=False):
                 
             os.makedirs(target_dir, exist_ok=True)
             target_file = os.path.join(target_dir, filename)
-            if file_utils.move_file_with_unique_name(file_path, target_file):
+            if move_file_with_unique_name(file_path, target_file):
                 moved_count += 1
     
     logger.info(f"分组完成! 已移动: {moved_count}个文件")
@@ -269,7 +267,7 @@ def rename_no_camera_files(no_camera_dir):
             time_part = match.group(2)
             new_base_name = f"IMG_{date_part}_{time_part}00"
             target_file = os.path.join(no_camera_dir, f"{new_base_name}{ext}")
-            file_utils.move_file_with_unique_name(file_path, target_file)
+            move_file_with_unique_name(file_path, target_file)
             renamed_count += 1
             continue
         
@@ -280,7 +278,7 @@ def rename_no_camera_files(no_camera_dir):
             time_part = match.group(2)
             new_base_name = f"IMG_{date_part}_{time_part}"
             target_file = os.path.join(no_camera_dir, f"{new_base_name}{ext}")
-            file_utils.move_file_with_unique_name(file_path, target_file)
+            move_file_with_unique_name(file_path, target_file)
             renamed_count += 1
             continue
         
@@ -291,7 +289,7 @@ def rename_no_camera_files(no_camera_dir):
             time_part = match.group(2)
             new_base_name = f"IMG_{date_part}_{time_part}"
             target_file = os.path.join(no_camera_dir, f"{new_base_name}{ext}")
-            file_utils.move_file_with_unique_name(file_path, target_file)
+            move_file_with_unique_name(file_path, target_file)
             renamed_count += 1
             continue
         
@@ -309,7 +307,7 @@ def rename_no_camera_files(no_camera_dir):
             time_part = f"{hour}{minute}{second}"
             new_base_name = f"IMG_{date_part}_{time_part}"
             target_file = os.path.join(no_camera_dir, f"{new_base_name}{ext}")
-            file_utils.move_file_with_unique_name(file_path, target_file)
+            move_file_with_unique_name(file_path, target_file)
             renamed_count += 1
             continue
         
@@ -328,7 +326,7 @@ def rename_no_camera_files(no_camera_dir):
                 time_str = dt_obj.strftime('%H%M%S')
                 new_base_name = f"IMG_{date_str}_{time_str}_NO"
                 target_file = os.path.join(no_camera_dir, f"{new_base_name}{ext}")
-                file_utils.move_file_with_unique_name(file_path, target_file)
+                move_file_with_unique_name(file_path, target_file)
                 renamed_count += 1
             except Exception as e:
                 logger.error(f"格式化时间失败: {filename} - {str(e)}")
