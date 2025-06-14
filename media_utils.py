@@ -171,20 +171,9 @@ def rename_media(camera_dir):
         dt_obj = format_shooting_time(dt_str=dt_str)
         if dt_obj is None:
           continue
-        new_name = file_utils.create_target_filename(prefix, dt_obj, ext, os.listdir(camera_dir))
-        if not new_name:
-            skipped_count += 1
-            continue
-            
-        if filename != new_name:
-            new_path = os.path.join(camera_dir, new_name)
-            os.rename(file_path, new_path)
-            logger.info(f"重命名: {filename} -> {new_name}")
-            renamed_count += 1
-        else:
-            logger.info(f"跳过重命名: {filename} 已符合命名规则")
-            skipped_count += 1
-    
+        base_name = f"{prefix}_{dt_obj}"
+        remane_file_with_confict_resolution(file_path, base_name, ext, camera_dir)
+        renamed_count += 1
     logger.info(f"重命名完成! 已重命名: {renamed_count}张, 跳过: {skipped_count}张")
 
 

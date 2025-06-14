@@ -44,7 +44,6 @@ get_exif_datetime = media_utils.get_exif_datetime
 get_video_datetime = media_utils.get_video_datetime
 get_media_datetime = media_utils.get_media_datetime
 format_shooting_time = media_utils.format_shooting_time
-create_target_filename = file_utils.create_target_filename
 
 # 支持的图片和视频扩展名
 IMAGE_EXTENSIONS = media_utils.IMAGE_EXTENSIONS
@@ -108,7 +107,7 @@ def classify_and_rename_media(source_path, file_types):
     logger.info("==================================\n\n")
     
     # 步骤4
-    media_utils.group_by_year(camera_dir)  
+    #media_utils.group_by_year(camera_dir)  
     #media_utils.group_by_year_month(camera_dir)
     logger.info("==================================\n\n")
     
