@@ -9,8 +9,6 @@ import os
 import shutil
 import logging
 
-from media_utils import IMAGE_EXTENSIONS, get_exif_datetime
-
 logger = logging.getLogger(__name__)
 
 def copy_files_with_conflict_resolution(src_dir, dest_dir, file_types=None):
@@ -36,6 +34,7 @@ def copy_files_with_conflict_resolution(src_dir, dest_dir, file_types=None):
             if filename in ignore_list:
                 continue
             base_name, ext = os.path.splitext(filename)
+            logger.info(f'ext {ext} file_types {file_types}')
             ext = ext.lower()
             if file_types and ext not in file_types:
                 continue
@@ -155,20 +154,3 @@ def set_file_creation_date(filepath, dt_str):
     except Exception as e:
         logger.error(f"设置创建时间失败: {filepath} - {str(e)}")
         return False
-
-
-def set_creation_time_for_photos(directory):
-    """
-    递归遍历目录，为每张照片设置创建时间为拍摄时间
-    """
-    for root, _, files in os.walk(directory):
-        for filename in files:
-            filepath = os.path.join(root, filename)
-            # 检查文件扩展名是否为图片
-            _, ext = os.path.splitext(filename)
-            if ext.lower() not in IMAGE_EXTENSIONS:
-                continue
-            # 获取拍摄时间
-            dt_str = get_exif_datetime(filepath)
-            if dt_str:
-                set_file_creation_date(filepath, dt_str)

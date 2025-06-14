@@ -45,14 +45,14 @@ IMAGE_EXTENSIONS = media_utils.IMAGE_EXTENSIONS
 VIDEO_EXTENSIONS = media_utils.VIDEO_EXTENSIONS
 MEDIA_EXTENSIONS = media_utils.MEDIA_EXTENSIONS
 
-def mere_all_files(source_dir: str, dest_dir: str):
+def copy_files_by_types(source_dir: str, dest_dir: str, file_types=None, exclude_dirs=None):
       # 验证路径有效性
     if not os.path.isdir(source_dir):
         logger.error("错误: 源目录不存在或不是目录")
         exit(1)
     
     logger.info(f"开始复制文件: {source_dir} → {dest_dir}")
-    report = copy_files_with_conflict_resolution(source_dir, dest_dir, MEDIA_EXTENSIONS)
+    report = copy_files_with_conflict_resolution(source_dir, dest_dir, file_types)
     
     # 生成并记录报告
     report_str = generate_conflict_report(report)
@@ -60,23 +60,17 @@ def mere_all_files(source_dir: str, dest_dir: str):
     logger.info(report_str)
 
 
-def classify_files(directory):
+def move_files_by_types(source_dir: str, dest_dir: str, file_types=None, exclude_dirs=None):
     """
     分类图片和视频：
     - 图片移动到image目录
     - 视频移动到video目录
     """
-    # 创建目标目录
-    image_dir = os.path.join(directory, 'image')
-    video_dir = os.path.join(directory, 'video')
-    os.makedirs(image_dir, exist_ok=True)
-    os.makedirs(video_dir, exist_ok=True)
     
     image_count = 0
     video_count = 0
-    exclude_dirs = ['image', 'video']
     # 递归遍历目录
-    for root, dirs, files in os.walk(directory):
+    for root, dirs, files in os.walk(source_dir):
         dirs[:] = [d for d in dirs if d not in exclude_dirs]
         for filename in files:
           filepath = os.path.join(root, filename)
@@ -84,36 +78,28 @@ def classify_files(directory):
           # 获取文件扩展名
           _, ext = os.path.splitext(filename)
           ext = ext.lower()
-          
-          # 分类文件
-          if ext in IMAGE_EXTENSIONS:
-              move_file_with_conflict_resolution(filepath, image_dir)
-              image_count += 1
-          elif ext in VIDEO_EXTENSIONS:
-              move_file_with_conflict_resolution(filepath, video_dir)
-              video_count += 1
+          if not file_types:
+            move_file_with_conflict_resolution(filepath, dest_dir)
+            image_count += 1
           else:
-              logger.info(f"保留文件: {filename}")
+             if ext in file_types:
+              move_file_with_conflict_resolution(filepath, dest_dir)
+              image_count += 1
     logger.info(f"分类完成! 图片: {image_count}张, 视频: {video_count}张")
 
     
-def classify_and_rename_media(source_path):
+def classify_and_rename_media(source_path, file_types):
     """
     步骤1: 分类照片到camera和photo目录
     """
     
     # 执行处理步骤
-    camera_dir, no_camera_dir = media_utils.classify_media(source_path)
+    camera_dir, no_camera_dir = media_utils.classify_media(source_path, file_types)
     logger.info("==================================\n\n")
     
     # 步骤3
     media_utils.rename_media(camera_dir) 
     logger.info("==================================\n\n")
-    
-    # 新增步骤：设置照片创建时间为拍摄时间
-    # logger.info(f"设置照片创建时间为拍摄时间: {camera_dir}")
-    # set_creation_time_for_photos(camera_dir)
-    # logger.info("==================================\n\n")
     
     # 步骤4
     media_utils.group_by_year(camera_dir)  
@@ -141,32 +127,36 @@ def main():
         sys.exit(1)
     
     target_path = os.path.abspath(args.target_dir)
-    # 合并所有文件
-    if not args.no_copy:
-        mere_all_files(source_path, target_path)
-        logger.info("==================================\n\n")
-    
-    # 删除所有重复文件
-    # logger.info(f"删除所有重复文件: {target_path}")
-    # find_and_delete_duplicates(target_path, recursive=True)
-    # logger.info("==================================\n\n")
-    
-    # 分类文件
-    logger.info(f"分类文件: {target_path}")
-    classify_files(target_path)
-    logger.info("==================================\n\n")
-    
-    # 分类和重命名文件
-    image_path = os.path.join(target_path, "image")
-    classify_and_rename_media(image_path)
-    
-    video_path = os.path.join(target_path, "video")
-    classify_and_rename_media(video_path)
-    
-    # 遍历target_path目录下的所有子目录
-    # find_and_delete_duplicates(target_path, recursive=True)
-    # logger.info("==================================\n\n")
+    groups = [
+       ('image', IMAGE_EXTENSIONS),
+       ('video', VIDEO_EXTENSIONS),
+    ]
+    for group in groups:
+       # 创建目标目录
+       child_name = group[0]
+       file_types = group[1]
+       logger.info(f'handle child {child_name} file types {file_types}')
+       child_dir = os.path.join(target_path, child_name)
+       os.makedirs(child_dir, exist_ok=True)
 
+       # 拷贝文件
+       if not args.no_copy:
+        copy_files_by_types(source_path, child_dir, file_types=file_types)
+        logger.info("==================================\n\n")
+
+       # 删除所有重复文件
+       logger.info(f"删除所有重复文件: {target_path}")
+       find_and_delete_duplicates(target_path, recursive=True)
+       logger.info("==================================\n\n")
+
+       # 分类文件
+       logger.info(f"移动文件: {target_path}")
+       exclude_dirs = [child_name]
+       move_files_by_types(target_path, child_dir, file_types=file_types, exclude_dirs=exclude_dirs)
+       logger.info("==================================\n\n")
+       
+       # 分类和重命名文件
+       classify_and_rename_media(child_dir, file_types)
     logger.info("照片整理完成!")
 
 

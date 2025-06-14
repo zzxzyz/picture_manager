@@ -86,7 +86,7 @@ def format_shooting_time(dt_str):
         return None
 
 
-def classify_media(source_path):
+def classify_media(source_path, file_types):
     """
     分类媒体文件到camera和no_camera目录
     -有拍摄时间的文件放到camera目录
@@ -113,7 +113,7 @@ def classify_media(source_path):
         for filename in files:
           file_path = os.path.join(root, filename)
           _, ext = os.path.splitext(filename)
-          if ext.lower() in MEDIA_EXTENSIONS:
+          if ext.lower() in file_types:
               dt_str = get_media_datetime(file_path)
               dt_obj = format_shooting_time(dt_str=dt_str)
               if dt_obj:
@@ -238,19 +238,6 @@ def group_by_year_month(camera_dir):
     logger.info(f"年月分组完成! 已移动: {moved_count}张照片")
 
 
-def set_file_creation_date(filepath, dt_str):
-    """设置文件的创建时间为拍摄时间"""
-    try:
-        dt_obj = datetime.strptime(dt_str, "%Y:%m:%d %H:%M:%S")
-        timestamp = dt_obj.timestamp()
-        os.utime(filepath, (timestamp, timestamp))
-        logger.info(f"设置创建时间成功: {filepath} -> {dt_str}")
-        return True
-    except Exception as e:
-        logger.error(f"设置创建时间失败: {filepath} - {str(e)}")
-        return False
-
-
 def set_creation_time_for_photos(directory):
     """递归设置照片创建时间为拍摄时间"""
     for root, _, files in os.walk(directory):
@@ -261,7 +248,7 @@ def set_creation_time_for_photos(directory):
                 continue
             dt_str = get_exif_datetime(filepath)
             if dt_str:
-                set_file_creation_date(filepath, dt_str)
+                file_utils.set_file_creation_date(filepath, dt_str)
 
 
 def remane_file_with_confict_resolution(file_path, new_base_name, ext, target_dir):
