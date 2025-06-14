@@ -16,11 +16,14 @@ import duplicate_utils
 from datetime import datetime
 
 # 配置日志
+current_time = datetime.now().strftime('%Y%m%d_%H%M%S')
+log_filename = f'media_{current_time}.log'
+    
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('photo_organizer.log'),
+        logging.FileHandler(log_filename),
         logging.StreamHandler()
     ]
 )

@@ -34,7 +34,6 @@ def copy_files_with_conflict_resolution(src_dir, dest_dir, file_types=None):
             if filename in ignore_list:
                 continue
             base_name, ext = os.path.splitext(filename)
-            logger.info(f'ext {ext} file_types {file_types}')
             ext = ext.lower()
             if file_types and ext not in file_types:
                 continue
