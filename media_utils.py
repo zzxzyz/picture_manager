@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 # 支持的图片和视频扩展名
 IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp'}
 VIDEO_EXTENSIONS = {'.mp4', '.mov', '.avi', '.mkv', '.flv', '.wmv', '.mpeg', '.3gp', '.m4v'}
-MEDIA_EXTENSIONS = IMAGE_EXTENSIONS | VIDEO_EXTENSIONS
 
 def get_exif_datetime(image_path):
     """
@@ -118,11 +117,13 @@ def classify_media(source_path, file_types):
               dt_obj = format_shooting_time(dt_str=dt_str)
               if dt_obj:
                   logger.info(f"{filename} [拍摄时间: {dt_str}] -> {camera_dir}")
-                  file_utils.move_file_with_unique_name(file_path, camera_dir)
+                  target_file = os.path.join(camera_dir, filename)
+                  file_utils.move_file_with_unique_name(file_path, target_file)
                   camera_count += 1
               else:
                   logger.info(f"{filename} [拍摄时间:无] -> {no_camera_dir}")
-                  file_utils.move_file_with_unique_name(file_path, no_camera_dir)
+                  target_file = os.path.join(no_camera_dir, filename)
+                  file_utils.move_file_with_unique_name(file_path, target_file)
                   no_camera_count += 1
     
     logger.info(f"照片分类完成! camera: {camera_count}张, no_camera: {no_camera_count}张")
@@ -149,8 +150,10 @@ def rename_media(camera_dir):
     skipped_count = 0
     
     for file_path in file_list:
+        #logger.info(f"处理文件: {file_path}")
         filename = os.path.basename(file_path)
         _, ext = os.path.splitext(filename)
+        ext = ext.lower()
         if ext in IMAGE_EXTENSIONS:
             prefix = "IMG"
             file_pattern = r'^IMG_\d{8}_\d{6}'
@@ -172,7 +175,8 @@ def rename_media(camera_dir):
         if dt_obj is None:
           continue
         base_name = f"{prefix}_{dt_obj}"
-        rename_file_with_conflict_resolution(file_path, base_name, ext, camera_dir)
+        target_file = os.path.join(camera_dir, f"{base_name}{ext}")
+        file_utils.move_file_with_unique_name(file_path, target_file)
         renamed_count += 1
     logger.info(f"重命名完成! 已重命名: {renamed_count}张, 跳过: {skipped_count}张")
 
@@ -193,7 +197,8 @@ def group_by_year(camera_dir):
                 year_dir = os.path.join(camera_dir, year)
                 if not os.path.exists(year_dir):
                     os.makedirs(year_dir)
-                if file_utils.move_file_with_unique_name(file_path, year_dir):
+                target_file = os.path.join(year_dir, filename)
+                if file_utils.move_file_with_unique_name(file_path, target_file):
                     moved_count += 1
     
     logger.info(f"年份分组完成! 已移动: {moved_count}个文件")
@@ -220,43 +225,13 @@ def group_by_year_month(camera_dir):
                 year_month_dir = os.path.join(camera_dir, f"{year}-{month}")
                 if not os.path.exists(year_month_dir):
                     os.makedirs(year_month_dir)
-                is_moved = file_utils.move_file_with_unique_name(file_path, year_month_dir)
+                target_file = os.path.join(year_month_dir, filename)
+                is_moved = file_utils.move_file_with_unique_name(file_path, target_file)
                 if is_moved:
                   moved_count += 1
     
     logger.info(f"年月分组完成! 已移动: {moved_count}张照片")
 
-
-def set_creation_time_for_photos(directory):
-    """递归设置照片创建时间为拍摄时间"""
-    for root, _, files in os.walk(directory):
-        for filename in files:
-            filepath = os.path.join(root, filename)
-            _, ext = os.path.splitext(filename)
-            if ext.lower() not in IMAGE_EXTENSIONS:
-                continue
-            dt_str = get_exif_datetime(filepath)
-            if dt_str:
-                file_utils.set_file_creation_date(filepath, dt_str)
-
-
-def rename_file_with_conflict_resolution(file_path, new_base_name, ext, target_dir):
-    """
-    重命名文件并解决冲突
-    """
-    
-    new_name = f"{new_base_name}{ext}"
-    
-    # 解决文件名冲突
-    counter = 1
-    while os.path.exists(os.path.join(target_dir, new_name)):
-        new_name = f"{new_base_name}_{counter}{ext}"
-        counter += 1
-    
-    # 重命名文件
-    new_path = os.path.join(target_dir, new_name)
-    os.rename(file_path, new_path)
-    logger.info(f"重命名: {file_path} -> {new_name}")
 
 
 def rename_no_camera_files(no_camera_dir):
@@ -303,7 +278,8 @@ def rename_no_camera_files(no_camera_dir):
             date_part = match.group(1)
             time_part = match.group(2)
             new_base_name = f"IMG_{date_part}_{time_part}00"
-            rename_file_with_conflict_resolution(file_path, new_base_name, ext, no_camera_dir)
+            target_file = os.path.join(no_camera_dir, f"{new_base_name}{ext}")
+            file_utils.move_file_with_unique_name(file_path, target_file)
             renamed_count += 1
             continue
         
@@ -313,7 +289,8 @@ def rename_no_camera_files(no_camera_dir):
             date_part = match.group(1)
             time_part = match.group(2)
             new_base_name = f"IMG_{date_part}_{time_part}"
-            rename_file_with_conflict_resolution(file_path, new_base_name, ext, no_camera_dir)
+            target_file = os.path.join(no_camera_dir, f"{new_base_name}{ext}")
+            file_utils.move_file_with_unique_name(file_path, target_file)
             renamed_count += 1
             continue
         
@@ -323,7 +300,8 @@ def rename_no_camera_files(no_camera_dir):
             date_part = match.group(1)
             time_part = match.group(2)
             new_base_name = f"IMG_{date_part}_{time_part}"
-            rename_file_with_conflict_resolution(file_path, new_base_name, ext, no_camera_dir)
+            target_file = os.path.join(no_camera_dir, f"{new_base_name}{ext}")
+            file_utils.move_file_with_unique_name(file_path, target_file)
             renamed_count += 1
             continue
         
@@ -340,7 +318,8 @@ def rename_no_camera_files(no_camera_dir):
             date_part = f"{year}{month}{day}"
             time_part = f"{hour}{minute}{second}"
             new_base_name = f"IMG_{date_part}_{time_part}"
-            rename_file_with_conflict_resolution(file_path, new_base_name, ext, no_camera_dir)
+            target_file = os.path.join(no_camera_dir, f"{new_base_name}{ext}")
+            file_utils.move_file_with_unique_name(file_path, target_file)
             renamed_count += 1
             continue
         
@@ -358,7 +337,8 @@ def rename_no_camera_files(no_camera_dir):
                 date_str = dt_obj.strftime('%Y%m%d')
                 time_str = dt_obj.strftime('%H%M%S')
                 new_base_name = f"IMG_{date_str}_{time_str}_NO"
-                rename_file_with_conflict_resolution(file_path, new_base_name, ext, no_camera_dir)
+                target_file = os.path.join(no_camera_dir, f"{new_base_name}{ext}")
+                file_utils.move_file_with_unique_name(file_path, target_file)
                 renamed_count += 1
             except Exception as e:
                 logger.error(f"格式化时间失败: {filename} - {str(e)}")

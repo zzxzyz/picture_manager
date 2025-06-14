@@ -33,9 +33,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # 使用新模块中的函数
-copy_files_with_conflict_resolution = file_utils.copy_files_with_unique_name
+copy_files_with_unique_name = file_utils.copy_files_with_unique_name
 generate_conflict_report = file_utils.generate_conflict_report
-move_file_with_conflict_resolution = file_utils.move_file_with_unique_name
+move_file_with_unique_name = file_utils.move_file_with_unique_name
 calculate_md5 = duplicate_utils.calculate_md5
 find_duplicate_files = duplicate_utils.find_duplicate_files
 delete_duplicates = duplicate_utils.delete_duplicates
@@ -48,7 +48,6 @@ format_shooting_time = media_utils.format_shooting_time
 # 支持的图片和视频扩展名
 IMAGE_EXTENSIONS = media_utils.IMAGE_EXTENSIONS
 VIDEO_EXTENSIONS = media_utils.VIDEO_EXTENSIONS
-MEDIA_EXTENSIONS = media_utils.MEDIA_EXTENSIONS
 
 def copy_files_by_types(source_dir: str, dest_dir: str, file_types=None, exclude_dirs=None):
       # 验证路径有效性
@@ -57,7 +56,7 @@ def copy_files_by_types(source_dir: str, dest_dir: str, file_types=None, exclude
         exit(1)
     
     logger.info(f"开始复制文件: {source_dir} → {dest_dir}")
-    report = copy_files_with_conflict_resolution(source_dir, dest_dir, file_types)
+    report = copy_files_with_unique_name(source_dir, dest_dir, file_types)
     
     # 生成并记录报告
     report_str = generate_conflict_report(report)
@@ -84,11 +83,11 @@ def move_files_by_types(source_dir: str, dest_dir: str, file_types=None, exclude
           _, ext = os.path.splitext(filename)
           ext = ext.lower()
           if not file_types:
-            move_file_with_conflict_resolution(filepath, dest_dir)
+            move_file_with_unique_name(filepath, dest_dir)
             image_count += 1
           else:
              if ext in file_types:
-              move_file_with_conflict_resolution(filepath, dest_dir)
+              move_file_with_unique_name(filepath, dest_dir)
               image_count += 1
     logger.info(f"分类完成! 图片: {image_count}张, 视频: {video_count}张")
 
@@ -106,12 +105,12 @@ def classify_and_rename_media(source_path, file_types):
     media_utils.rename_media(camera_dir) 
     logger.info("==================================\n\n")
     
-    # 步骤4
-    #media_utils.group_by_year(camera_dir)  
-    #media_utils.group_by_year_month(camera_dir)
-    logger.info("==================================\n\n")
+    # # 步骤4
+    # #media_utils.group_by_year(camera_dir)  
+    # #media_utils.group_by_year_month(camera_dir)
+    # logger.info("==================================\n\n")
     
-    # 步骤: 重命名no_camera目录中的文件
+    # # 步骤: 重命名no_camera目录中的文件
     media_utils.rename_no_camera_files(no_camera_dir)
     logger.info("==================================\n\n")
 

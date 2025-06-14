@@ -26,19 +26,19 @@ def copy_files_with_unique_name(source_dir, target_dir, file_types=None):
     # 递归遍历源目录
     for root, _, files in os.walk(source_dir):
         for filename in files:
-            base_name, ext = os.path.splitext(filename)
-            ext = ext.lower()
-            if file_types and ext not in file_types:
+            _, ext = os.path.splitext(filename)
+            if file_types and ext.lower() not in file_types:
                 continue
             
-            file_fullpath = os.path.join(root, filename)
-            new_path, conflict_level = move_file_with_unique_name(file_fullpath, target_dir, is_copy=True)
+            source_file = os.path.join(root, filename)
+            target_file = os.path.join(target_dir, filename)
+            new_target_file, conflict_level = move_file_with_unique_name(source_file, target_file, is_copy=True)
             
             # 记录冲突解决情况
             if conflict_level > 0:
-                conflict_report[file_fullpath] = {
+                conflict_report[source_file] = {
                     "original_name": filename,
-                    "new_name": new_path,
+                    "new_name": new_target_file,
                     "conflict_level": conflict_level
                 }
     return conflict_report
@@ -65,31 +65,31 @@ def generate_conflict_report(report):
     return report_str
 
 
-def move_file_with_unique_name(file_fullpath, target_dir, is_copy=False):
+def move_file_with_unique_name(source_file, target_file, is_copy=False):
     """
     移动或复制指定文件到指定目录，并解决文件名冲突
     """
     # 获取文件名和扩展名
-    base_name, ext = os.path.splitext(os.path.basename(file_fullpath))
-    new_name = base_name + ext
-    new_path = os.path.join(target_dir, new_name)
+    target_dir = os.path.dirname(target_file)
+    base_name, ext = os.path.splitext(os.path.basename(target_file))
+    new_target_file = target_file
     
     # 检查文件是否存在冲突
     counter = 0
-    while os.path.exists(new_path):
+    while os.path.exists(new_target_file):
         counter += 1
         new_name = f"{base_name}_{counter}{ext}"
-        new_path = os.path.join(target_dir, new_name)
+        new_target_file = os.path.join(target_dir, new_name)
     
     # 移动文件
     try:
         if is_copy:
-            shutil.copy2(file_fullpath, new_path)
-            logger.info(f"复制文件: {file_fullpath} -> {new_path}")
+            shutil.copy2(source_file, new_target_file)
+            logger.info(f"复制文件: {source_file} -> {new_target_file}")
         else:
-          shutil.move(file_fullpath, new_path)
-          logger.info(f"移动文件: {file_fullpath} -> {new_path}")
-        return new_path, counter,
+          shutil.move(source_file, new_target_file)
+          logger.info(f"移动文件: {source_file} -> {new_target_file}")
+        return new_target_file, counter,
     except Exception as e:
         logger.error(f"操作文件失败: {e} is_copy: {is_copy}")
         return None, counter,
