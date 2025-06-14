@@ -75,7 +75,7 @@ def move_files_by_types(source_dir: str, dest_dir: str, file_types=None, exclude
     logger.info(f"分类完成! 图片: {image_count}张, 视频: {video_count}张")
 
     
-def classify_and_rename_media(source_path, file_types):
+def classify_and_rename_media(source_path, file_types, group_type):
     """
     步骤1: 分类照片到camera和photo目录
     """
@@ -89,15 +89,18 @@ def classify_and_rename_media(source_path, file_types):
     logger.info("==================================\n\n")
     
     # # 步骤4
-    #group_by_year_and_month(camera_dir, use_month=True)  
-    #logger.info("==================================\n\n")
+    use_month = True
+    if group_type == 'year':
+        use_month = False
+    group_by_year_and_month(camera_dir, use_month=use_month)  
+    logger.info("==================================\n\n")
     
     # # 步骤: 重命名no_camera目录中的文件
     rename_no_camera_files(no_camera_dir)
     logger.info("==================================\n\n")
 
 
-def process_media_group(group: tuple, source_path: str, target_path: str, no_copy: bool) -> None:
+def process_media_group(group: tuple, source_path: str, target_path: str, no_copy: bool, group_type: str) -> None:
     """
     处理特定媒体类型组（如图片或视频）
     
@@ -145,7 +148,7 @@ def process_media_group(group: tuple, source_path: str, target_path: str, no_cop
     
     # 分类和重命名文件
     try:
-        classify_and_rename_media(child_dir, file_types)
+        classify_and_rename_media(child_dir, file_types, group_type)
     except Exception as e:
         logger.error(f"分类和重命名失败: {e}")
 
@@ -155,9 +158,11 @@ def main():
     parser.add_argument('source_dir', type=str, help='源目录路径')
     parser.add_argument('target_dir', type=str, help='目标目录路径')
     parser.add_argument('--no-copy', action='store_true', help='不复制文件（默认复制文件）')
+    # 添加选项区分按年还是按月还是按日分组
+    parser.add_argument('--group', type=str, help='分组类型（year/month/day）', default='year')
     
     args = parser.parse_args()
-    logger.info(f"参数设置: no_copy={args.no_copy}")
+    logger.info(f"参数设置: no_copy={args.no_copy} group={args.group}")
     
     source_path = os.path.abspath(args.source_dir)
     if not os.path.isdir(source_path):
@@ -178,7 +183,7 @@ def main():
     ]
     
     for group in media_groups:
-        process_media_group(group, source_path, target_path, args.no_copy)
+        process_media_group(group, source_path, target_path, args.no_copy, args.group)
     
     logger.info("照片整理完成!")
 

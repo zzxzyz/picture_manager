@@ -330,31 +330,26 @@ def rename_no_camera_files(no_camera_dir):
             continue
         
         #规则6: 其它照片，统一重命名为文件的修改时间
-        try:
-            mod_time = os.path.getmtime(file_path)
-            dt_obj = datetime.fromtimestamp(mod_time)
+        # try:
+        #     mod_time = os.path.getmtime(file_path)
+        #     dt_obj = datetime.fromtimestamp(mod_time)
             
-            # 格式化时间并处理异常
-            try:
-                formatted_time = dt_obj.strftime('%Y:%m:%d %H:%M:%S')
-                logger.info(f"{filename} [修改时间: {formatted_time}]")
+        #     # 格式化时间并处理异常
+        #     try:
+        #         formatted_time = dt_obj.strftime('%Y:%m:%d %H:%M:%S')
+        #         logger.info(f"{filename} [修改时间: {formatted_time}]")
                 
-                # 创建新文件名
-                date_str = dt_obj.strftime('%Y%m%d')
-                time_str = dt_obj.strftime('%H%M%S')
-                new_base_name = f"IMG_{date_str}_{time_str}_NO"
-                target_file = os.path.join(no_camera_dir, f"{new_base_name}{ext}")
-                move_file_with_unique_name(file_path, target_file)
-                renamed_count += 1
-            except Exception as e:
-                logger.error(f"格式化时间失败: {filename} - {str(e)}")
-                skipped_count += 1
-        except Exception as e:
-            logger.error(f"获取修改时间失败: {filename} - {str(e)}")
-            skipped_count += 1
-        
-        # 其他文件跳过
-        # logger.info(f"跳过重命名: {filename} 不符合任何规则")
-        # skipped_count += 1
-    
+        #         # 创建新文件名
+        #         date_str = dt_obj.strftime('%Y%m%d')
+        #         time_str = dt_obj.strftime('%H%M%S')
+        #         new_base_name = f"IMG_{date_str}_{time_str}_NO"
+        #         target_file = os.path.join(no_camera_dir, f"{new_base_name}{ext}")
+        #         move_file_with_unique_name(file_path, target_file)
+        #         renamed_count += 1
+        #     except Exception as e:
+        #         logger.error(f"格式化时间失败: {filename} - {str(e)}")
+        #         skipped_count += 1
+        # except Exception as e:
+        #     logger.error(f"获取修改时间失败: {filename} - {str(e)}")
+        #     skipped_count += 1
     logger.info(f"no_camera目录重命名完成! 已重命名: {renamed_count}张, 跳过: {skipped_count}张")
