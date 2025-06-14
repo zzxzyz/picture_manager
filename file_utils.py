@@ -11,60 +11,36 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def copy_files_with_conflict_resolution(src_dir, dest_dir, file_types=None):
+def copy_files_with_unique_name(source_dir, target_dir, file_types=None):
     """
     递归复制所有文件到目标目录，解决文件名冲突
     
-    :param src_dir: 源目录
-    :param dest_dir: 目标目录
+    :param source_dir: 源目录
+    :param target_dir: 目标目录
     :param file_types: 允许的文件扩展名列表（例如 ['.jpg', '.png']），如果为空或None则不过滤
     """
     # 创建目标目录（如果不存在）
-    os.makedirs(dest_dir, exist_ok=True)
-    
-    # 存储文件名计数和冲突解决报告
-    name_counter = defaultdict(int)
+    os.makedirs(target_dir, exist_ok=True)
     conflict_report = {}
 
-    ignore_list = ['.DS_Store']
-
     # 递归遍历源目录
-    for root, _, files in os.walk(src_dir):
+    for root, _, files in os.walk(source_dir):
         for filename in files:
-            if filename in ignore_list:
-                continue
             base_name, ext = os.path.splitext(filename)
             ext = ext.lower()
             if file_types and ext not in file_types:
                 continue
-            src_path = os.path.join(root, filename)
             
-            # 生成基本目标路径
-            dest_name = f"{base_name}{ext}"
-            conflict_level = 0
-            
-            # 处理文件名冲突
-            while os.path.exists(os.path.join(dest_dir, dest_name)):
-                conflict_level += 1
-                dest_name = f"{base_name}_{conflict_level}{ext}"
-            
-            # 更新文件名计数器
-            name_counter[filename] += 1
-            
-            # 复制文件
-            dest_path = os.path.join(dest_dir, dest_name)
-            shutil.copy2(src_path, dest_path)
+            file_fullpath = os.path.join(root, filename)
+            new_path, conflict_level = move_file_with_unique_name(file_fullpath, target_dir, is_copy=True)
             
             # 记录冲突解决情况
             if conflict_level > 0:
-                conflict_report[src_path] = {
+                conflict_report[file_fullpath] = {
                     "original_name": filename,
-                    "new_name": dest_name,
+                    "new_name": new_path,
                     "conflict_level": conflict_level
                 }
-            
-            logger.info(f"复制: {src_path} -> {dest_path}")
-    
     return conflict_report
 
 
@@ -89,26 +65,31 @@ def generate_conflict_report(report):
     return report_str
 
 
-def move_file_with_conflict_resolution(source_path, destination_path):
+def move_file_with_unique_name(file_fullpath, target_dir, is_copy=False):
     """
-    移动文件到指定目录，并解决文件名冲突
+    移动或复制指定文件到指定目录，并解决文件名冲突
     """
     # 获取文件名和扩展名
-    base_name, ext = os.path.splitext(os.path.basename(source_path))
-    new_path = os.path.join(destination_path, base_name + ext)
+    base_name, ext = os.path.splitext(os.path.basename(file_fullpath))
+    new_name = base_name + ext
+    new_path = os.path.join(target_dir, new_name)
     
     # 检查文件是否存在冲突
-    counter = 1
+    counter = 0
     while os.path.exists(new_path):
-        new_name = f"{base_name}_{counter}{ext}"
-        new_path = os.path.join(destination_path, new_name)
         counter += 1
+        new_name = f"{base_name}_{counter}{ext}"
+        new_path = os.path.join(target_dir, new_name)
     
     # 移动文件
     try:
-        shutil.move(source_path, new_path)
-        logger.info(f"成功移动文件: {source_path} -> {new_path}")
-        return True
+        if is_copy:
+            shutil.copy2(file_fullpath, new_path)
+            logger.info(f"复制文件: {file_fullpath} -> {new_path}")
+        else:
+          shutil.move(file_fullpath, new_path)
+          logger.info(f"移动文件: {file_fullpath} -> {new_path}")
+        return new_path, counter,
     except Exception as e:
-        logger.error(f"移动文件失败: {e}")
-        return False
+        logger.error(f"操作文件失败: {e} is_copy: {is_copy}")
+        return None, counter,

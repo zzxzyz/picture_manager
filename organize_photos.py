@@ -33,9 +33,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # 使用新模块中的函数
-copy_files_with_conflict_resolution = file_utils.copy_files_with_conflict_resolution
+copy_files_with_conflict_resolution = file_utils.copy_files_with_unique_name
 generate_conflict_report = file_utils.generate_conflict_report
-move_file_with_conflict_resolution = file_utils.move_file_with_conflict_resolution
+move_file_with_conflict_resolution = file_utils.move_file_with_unique_name
 calculate_md5 = duplicate_utils.calculate_md5
 find_duplicate_files = duplicate_utils.find_duplicate_files
 delete_duplicates = duplicate_utils.delete_duplicates

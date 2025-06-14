@@ -118,11 +118,11 @@ def classify_media(source_path, file_types):
               dt_obj = format_shooting_time(dt_str=dt_str)
               if dt_obj:
                   logger.info(f"{filename} [拍摄时间: {dt_str}] -> {camera_dir}")
-                  file_utils.move_file_with_conflict_resolution(file_path, camera_dir)
+                  file_utils.move_file_with_unique_name(file_path, camera_dir)
                   camera_count += 1
               else:
                   logger.info(f"{filename} [拍摄时间:无] -> {no_camera_dir}")
-                  file_utils.move_file_with_conflict_resolution(file_path, no_camera_dir)
+                  file_utils.move_file_with_unique_name(file_path, no_camera_dir)
                   no_camera_count += 1
     
     logger.info(f"照片分类完成! camera: {camera_count}张, no_camera: {no_camera_count}张")
@@ -193,7 +193,7 @@ def group_by_year(camera_dir):
                 year_dir = os.path.join(camera_dir, year)
                 if not os.path.exists(year_dir):
                     os.makedirs(year_dir)
-                if file_utils.move_file_with_conflict_resolution(file_path, year_dir):
+                if file_utils.move_file_with_unique_name(file_path, year_dir):
                     moved_count += 1
     
     logger.info(f"年份分组完成! 已移动: {moved_count}个文件")
@@ -220,7 +220,7 @@ def group_by_year_month(camera_dir):
                 year_month_dir = os.path.join(camera_dir, f"{year}-{month}")
                 if not os.path.exists(year_month_dir):
                     os.makedirs(year_month_dir)
-                is_moved = file_utils.move_file_with_conflict_resolution(file_path, year_month_dir)
+                is_moved = file_utils.move_file_with_unique_name(file_path, year_month_dir)
                 if is_moved:
                   moved_count += 1
     
