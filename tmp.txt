@@ -1,0 +1,29 @@
+def mere_all_files(source_dir: str, dest_dir: str, file_types=None):
+      # 验证路径有效性
+    if not os.path.isdir(source_dir):
+        logger.error("错误: 源目录不存在或不是目录")
+        exit(1)
+    
+    logger.info(f"开始复制文件: {source_dir} → {dest_dir}")
+    report = copy_files_with_conflict_resolution(source_dir, dest_dir, file_types)
+    
+    # 生成并记录报告
+    report_str = generate_conflict_report(report)
+    logger.info("操作完成! 文件复制统计:")
+    logger.info(report_str)
+
+
+
+def handle_by_group(source_path, target_path, file_types):
+    logger.info(f"开始合并所有文件: {source_path} → {target_path}")
+    mere_all_files(source_path, target_path, file_types)
+    logger.info("==================================\n\n")
+    
+    # 删除所有重复文件
+    logger.info(f"删除所有重复文件: {target_path}")
+    find_and_delete_duplicates(target_path)
+    logger.info("==================================\n\n")
+    
+    # 分类和重命名文件
+    classify_and_rename_media(target_path)
+    logger.info("==================================\n\n")
