@@ -15,9 +15,12 @@ import media_utils
 import duplicate_utils
 from datetime import datetime
 
+# 确保logs目录存在
+os.makedirs('logs', exist_ok=True)
+    
 # 配置日志
 current_time = datetime.now().strftime('%Y%m%d_%H%M%S')
-log_filename = f'media_{current_time}.log'
+log_filename = os.path.join('logs', f'media_{current_time}.log')
     
 logging.basicConfig(
     level=logging.INFO,
