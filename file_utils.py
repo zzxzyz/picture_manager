@@ -69,6 +69,9 @@ def move_file_with_unique_name(source_file, target_file, is_copy=False):
     """
     移动或复制指定文件到指定目录，并解决文件名冲突
     """
+    if source_file == target_file:
+        return None, 0
+    
     # 获取文件名和扩展名
     target_dir = os.path.dirname(target_file)
     base_name, ext = os.path.splitext(os.path.basename(target_file))

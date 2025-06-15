@@ -100,7 +100,12 @@ def classify_and_rename_media(source_path, file_types, group_type):
     logger.info("==================================\n\n")
 
 
-def process_media_group(group: tuple, source_path: str, target_path: str, no_copy: bool, group_type: str) -> None:
+def process_media_group(group: tuple, 
+                        source_path: str, 
+                        target_path: str, 
+                        no_copy: bool, 
+                        group_type: str,
+                        duplicate: bool) -> None:
     """
     处理特定媒体类型组（如图片或视频）
     
@@ -130,12 +135,13 @@ def process_media_group(group: tuple, source_path: str, target_path: str, no_cop
         logger.info("==================================\n\n")
 
     # 删除重复文件
-    logger.info(f"删除重复文件: {target_path}")
-    try:
-        find_and_delete_duplicates(target_path, recursive=True)
-    except Exception as e:
-        logger.error(f"删除重复文件失败: {e}")
-    logger.info("==================================\n\n")
+    if duplicate:
+      logger.info(f"删除重复文件: {target_path}")
+      try:
+          find_and_delete_duplicates(target_path, recursive=True)
+      except Exception as e:
+          logger.error(f"删除重复文件失败: {e}")
+      logger.info("==================================\n\n")
 
     # 移动文件
     logger.info(f"移动文件到分类目录: {child_dir}")
@@ -158,11 +164,11 @@ def main():
     parser.add_argument('source_dir', type=str, help='源目录路径')
     parser.add_argument('target_dir', type=str, help='目标目录路径')
     parser.add_argument('--no-copy', action='store_true', help='不复制文件（默认复制文件）')
-    # 添加选项区分按年还是按月还是按日分组
     parser.add_argument('--group', type=str, help='分组类型（year/month/day）', default='year')
+    parser.add_argument('--duplicate', action='store_true', help='删除重复文件')
     
     args = parser.parse_args()
-    logger.info(f"参数设置: no_copy={args.no_copy} group={args.group}")
+    logger.info(f"参数设置: no_copy={args.no_copy} group={args.group} duplicate={args.duplicate}")
     
     source_path = os.path.abspath(args.source_dir)
     if not os.path.isdir(source_path):
@@ -183,7 +189,7 @@ def main():
     ]
     
     for group in media_groups:
-        process_media_group(group, source_path, target_path, args.no_copy, args.group)
+        process_media_group(group, source_path, target_path, args.no_copy, args.group, args.duplicate)
     
     logger.info("照片整理完成!")
 
