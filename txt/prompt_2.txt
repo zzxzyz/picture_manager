@@ -3,34 +3,33 @@
 2. 不能改变源文件夹的任何东西，把源文件夹包括所有子目录下面的所有视频拷贝到目标目录的video子目录下面，注意处理文件名冲突
 3. 对目标目录的所有文件进行去重，文件是否相同以文件的md5为准
 
-分组处理目标目录里面的所有图片和视频
-图片处理规则：
-1. 把目标目录除image目录外的的所有图片拷贝到image子目录下面
-2. 对图片进行二次分类，先查询图片的拍摄时间并打印出来，拍摄时间的期望格式是YYYY:MM:DD HH:MM:SS, 
-   同时打印YYYY:MM:DD HH:MM:SS和YYYYMMDD_HHMMSS两种时间格式，注意处理拍摄时间的各种异常情况，
-   然后把有拍摄时间的放到camera目录，没有拍摄时间的放到no_camera目录，注意处理同文件名称冲突
-3. 处理image/camera目录，主要有重命名和分组两个操作，文件命名规则如下IMG_YYYYMMDD_HHMMSS.后缀名，分组目录命名规则如下：YYYY-MM或者YYYY
-   3.1 重命名：先检查文件命名是否符合规范，如果符合则直接跳过，如果不符合，则读取照片的拍摄时间，用拍摄时间进行命名
-   3.2 分组：读取文件名称中的年月日， 如果读取不到，则直接跳过，如果读取到，则根据参数控制按年或者按年月进行分组
-4. 处理image/no_camera目录，主要有重命名和分组两个操作，文件命名规则如下IMG_YYYYMMDD_HHMMSS.后缀名，分组目录命名规则如下：YYYY-MM或者YYYY 
-   4.1 重命名：先检查文件命名是否符合规范，如果符合则直接跳过，如果不符合，按如下规则处理，所有规则使用正则表达式匹配，主要用于提取名称中的时间信息
-   如果不符合则直接跳过
-    规则1： 提取YYYYMMDD_IMG_HHMM.后缀名，里面的YYYYMMDD和HHMM，缺少的SS用00替代
-    规则2： 提取MTXX_YYYYMMDD_HHMMSS.后缀名，里面的YYYYMMDD和HHMMSS
-    规则3： 提取ptYYYY_MM_DD_HH_MM_SS.后缀名, 里面的YYYY, MM, DD, HH, MM, SS
-    规则4:  提取beauty_YYYMMDDHHMMSS*.后缀名, 里面的beauty_YYYMMDDHHMMSS
-   4.2 分组：读取文件名称中的年月日， 如果读取不到，则直接跳过，如果读取到，则根据参数控制按年或者按年月进行分组
+4. 处理目标目录里面的所有图片:
+  4.1 把目标目录除image目录外的的所有图片拷贝到image子目录下面
+  4.2 对图片进行二次分类，先查询图片的拍摄时间并打印出来，拍摄时间的期望格式是YYYY:MM:DD HH:MM:SS, 
+    同时打印YYYY:MM:DD HH:MM:SS和YYYYMMDD_HHMMSS两种时间格式，注意处理拍摄时间的各种异常情况，
+    然后把有拍摄时间的放到camera目录，没有拍摄时间的放到no_camera目录，注意处理同文件名称冲突
+  4.3. 处理image/camera目录，主要有重命名和分组两个操作，文件命名规则如下IMG_YYYYMMDD_HHMMSS.后缀名，分组目录命名规则如下：YYYY-MM或者YYYY
+    4.3.1 重命名：先检查文件命名是否符合规范，如果符合则直接跳过，如果不符合，则读取照片的拍摄时间，用拍摄时间进行命名
+    4.3.2 分组：读取文件名称中的年月日， 如果读取不到，则直接跳过，如果读取到，则根据参数控制按年或者按年月进行分组
+  4.4. 处理image/no_camera目录，主要有重命名和分组两个操作，文件命名规则如下IMG_YYYYMMDD_HHMMSS.后缀名，分组目录命名规则如下：YYYY-MM或者YYYY 
+    4.4.1 重命名：先检查文件命名是否符合规范，如果符合则直接跳过，如果不符合，按如下规则处理，所有规则使用正则表达式匹配，主要用于提取名称中的时间信息
+    如果不符合则直接跳过
+      规则1： 提取YYYYMMDD_IMG_HHMM.后缀名，里面的YYYYMMDD和HHMM，缺少的SS用00替代
+      规则2： 提取MTXX_YYYYMMDD_HHMMSS.后缀名，里面的YYYYMMDD和HHMMSS
+      规则3： 提取ptYYYY_MM_DD_HH_MM_SS.后缀名, 里面的YYYY, MM, DD, HH, MM, SS
+      规则4:  提取beauty_YYYMMDDHHMMSS*.后缀名, 里面的beauty_YYYMMDDHHMMSS
+    44.2 分组：读取文件名称中的年月日， 如果读取不到，则直接跳过，如果读取到，则根据参数控制按年或者按年月进行分组
 
-视频处理规则：
-1. 把目标目录除video目录外的的所有图片拷贝到video子目录下面
-2. 对视频进行二次分类，先查询视频的拍摄时间并打印出来，拍摄时间的期望格式是YYYY:MM:DD HH:MM:SS, 
-   同时打印YYYY:MM:DD HH:MM:SS和YYYYMMDD_HHMMSS两种时间格式，注意处理拍摄时间的各种异常情况，
-   然后把有拍摄时间的放到camera目录，没有拍摄时间的放到no_camera目录，注意处理同文件名称冲突
-3. 处理video/camera目录，主要有重命名和分组两个操作，文件命名规则如下IMG_YYYYMMDD_HHMMSS.后缀名，分组目录命名规则如下：YYYY-MM或者YYYY
-   3.1 重命名：先检查文件命名是否符合规范，如果符合则直接跳过，如果不符合，则读取视频的拍摄时间，用拍摄时间进行命名
-   3.2 分组：读取文件名称中的年月日， 如果读取不到，则直接跳过，如果读取到，则根据参数控制按年或者按年月进行分组
-4. 处理video/no_camera目录，主要有重命名和分组两个操作，文件命名规则如下IMG_YYYYMMDD_HHMMSS.后缀名，分组目录命名规则如下：YYYY-MM或者YYYY 
-   4.1 分组：读取文件名称中的年月日， 如果读取不到，则直接跳过，如果读取到，则根据参数控制按年或者按年月进行分组
+5 处理目标目录里面的所有视频
+  5.1 把目标目录除video目录外的的所有图片拷贝到video子目录下面
+  5.2 对视频进行二次分类，先查询视频的拍摄时间并打印出来，拍摄时间的期望格式是YYYY:MM:DD HH:MM:SS, 
+    同时打印YYYY:MM:DD HH:MM:SS和YYYYMMDD_HHMMSS两种时间格式，注意处理拍摄时间的各种异常情况，
+    然后把有拍摄时间的放到camera目录，没有拍摄时间的放到no_camera目录，注意处理同文件名称冲突
+  5.3 处理video/camera目录，主要有重命名和分组两个操作，文件命名规则如下IMG_YYYYMMDD_HHMMSS.后缀名，分组目录命名规则如下：YYYY-MM或者YYYY
+    5.3.1 重命名：先检查文件命名是否符合规范，如果符合则直接跳过，如果不符合，则读取视频的拍摄时间，用拍摄时间进行命名
+    5.3.2 分组：读取文件名称中的年月日， 如果读取不到，则直接跳过，如果读取到，则根据参数控制按年或者按年月进行分组
+  5.4 处理video/no_camera目录，主要有重命名和分组两个操作，文件命名规则如下IMG_YYYYMMDD_HHMMSS.后缀名，分组目录命名规则如下：YYYY-MM或者YYYY 
+    5.4.1 分组：读取文件名称中的年月日， 如果读取不到，则直接跳过，如果读取到，则根据参数控制按年或者按年月进行分组
 
 
 实现要求：
@@ -43,79 +42,72 @@
 6. 生成mermaid流程图, 再实现代码
 
 ===========================
+初始准备阶段：
 
+递归扫描源文件夹及所有子目录
 
-请根据以下要求，作为一位专业的Python工程师，设计并实现一个用于整理文件夹内所有图片和视频的程序。整个过程需遵循以下步骤，并确保最终代码结构清晰、易于测试。同时，请使用标准的`os.path`库进行路径操作，
-通过命令行参数接收输入，并将日志记录到文件中。此外，每个功能模块应被合理地拆分至不同的文件中，且为每一步骤编写相应的测试用例以保证其正确性。在开始编码前，请先绘制mermaid流程图来概述整个处理逻辑。
+并行复制图片到/image目录和视频到/video目录
 
-### 任务描述
-- **源文件夹**：存放待整理的原始图片与视频。
-- **目标目录**：用于存放经过整理后的图片与视频副本。
-- **处理步骤**：
-  1. 不改变源文件夹内容的前提下，将所有图片和视频复制到指定的目标目录中。如果遇到同名文件，则采取适当措施避免覆盖（例如添加数字后缀）。
-  2. 对目标目录中的所有文件执行去重操作，判断依据为文件的MD5值。
-  3. 将目标目录下的文件按类型分类，即图片归入`image`子目录，视频归入`video`子目录。同样地，对于同名情况需要妥善处理。
-  4. 对于`image`和`video`两个子目录内的文件进一步细分：
-     - 查询每个文件的拍摄时间，并打印出两种格式的时间戳：`YYYY:MM:DD HH:MM:SS` 和 `YYYYMMDD_HHMMSS`。
-     - 根据是否能够获取到有效的拍摄时间信息，将文件分别移至`camera`或`no_camera`子目录下。对于无法直接从元数据读取时间的情况，考虑使用文件最后修改时间作为替代方案。
-  5. 在`camera`子目录中，基于拍摄时间对文件进行重命名及重新组织：
-     - 图片采用`IMG_YYYYMMDD_HHMMSS.扩展名`的形式命名；
-     - 视频则使用`VID_YYYYMMDD_HHMMSS.扩展名`的命名规则。
-     - 文件按照拍摄年份分组存储。
-  6. 对于`no_camera`子目录中的文件，尝试从文件名提取日期时间信息；若失败，则利用文件最后修改时间来进行命名。具体命名规则同上。
-  7. 最终再次检查目标目录下的所有文件，去除重复项（基于MD5校验）。
+计算所有文件的MD5值并删除重复文件
 
-### 额外说明
-- `${source_folder}`: 源文件夹路径。
-- `${target_folder}`: 目标文件夹路径。
-- 确保程序具有良好的异常处理机制，特别是当面对损坏的媒体文件或其他不可预见的问题时。
-- 测试用例应当涵盖正常情况以及边界条件，比如空文件夹、非媒体文件等情形。
-- Mermaid流程图应该清晰展示上述各个阶段之间的关系及其执行顺序。
+图片处理流程：
 
+时间分类：
 
-================================
+提取图片拍摄时间（EXIF元数据）
 
-# 根据是否有拍摄时间，先统一移动文件到对应目录，然后在处理文件重命名
-```
-    def process_media_folder(self, media_folder, media_type):
-        """处理图片或视频文件夹"""
-        self.logger.info(f"处理 {media_type} 文件夹: {media_folder}")
-        
-        # 创建camera和no_camera子目录
-        camera_dir = os.path.join(media_folder, 'camera')
-        no_camera_dir = os.path.join(media_folder, 'no_camera')
-        os.makedirs(camera_dir, exist_ok=True)
-        os.makedirs(no_camera_dir, exist_ok=True)
-        
-        # 处理每个文件
-        for file in os.listdir(media_folder):
-            file_path = os.path.join(media_folder, file)
-            if os.path.isfile(file_path):
-                # 获取创建时间
-                creation_time = get_creation_time(file_path)
-                
-                if creation_time:
-                    # 格式化时间
-                    time_str = format_time(creation_time, "%Y%m%d_%H%M%S")
-                    
-                    # 创建年份目录
-                    year_dir = os.path.join(camera_dir, str(creation_time.year))
-                    os.makedirs(year_dir, exist_ok=True)
-                    
-                    # 重命名并移动文件
-                    prefix = "IMG_" if media_type == "image" else "VID_"
-                    new_name = f"{prefix}{time_str}{os.path.splitext(file)[1]}"
-                    new_path = os.path.join(year_dir, new_name)
-                    os.rename(file_path, new_path)
-                    self.logger.info(f"已重命名并移动: {file} -> {new_path}")
-                else:
-                    # 移动到no_camera目录
-                    os.rename(file_path, os.path.join(no_camera_dir, file))
-                    self.logger.info(f"无法获取拍摄时间，移动到no_camera: {file}")
-        
-        # 处理no_camera目录中的文件
-        self.process_no_camera_folder(no_camera_dir, media_type)
-```
+打印标准格式和文件命名格式
 
+分类到camera/no_camera目录
 
-# 优化package 导入，运行过程中出现了很多错误
+camera目录处理：
+
+命名规范检查
+
+用拍摄时间重命名不符合规范的文件
+
+按年/年月分组
+
+no_camera目录处理：
+
+应用4种正则规则提取时间信息
+
+重命名后按年/年月分组
+
+视频处理流程：
+
+时间分类：
+
+提取视频拍摄时间（元数据）
+
+打印两种时间格式
+
+分类到camera/no_camera目录
+
+camera目录处理：
+
+命名规范检查
+
+用拍摄时间重命名
+
+按年/年月分组
+
+no_camera目录处理：
+
+仅分组操作（无重命名）
+
+按年/年月分组
+
+关键特性：
+
+完整的异常处理机制
+
+文件名冲突解决方案
+
+4种正则规则可视化
+
+统一的分组策略（YYYY 或 YYYY-MM）
+
+保持源文件夹不变的只读操作
+
+这个流程图完整呈现了所有技术细节，包括时间格式处理、正则规则、冲突解决方案和目录结构，同时通过模块化设计提高了可读性和可维护性。

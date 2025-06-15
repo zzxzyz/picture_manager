@@ -1,15 +1,92 @@
-graph TD
-    A[开始] --> B[复制文件到目标目录]
-    B --> C[MD5去重]
-    C --> D[按类型分类]
-    D --> E[获取拍摄时间]
-    E --> F{是否获取到时间?}
-    F -->|是| G[放入camera目录]
-    F -->|否| H[放入no_camera目录]
-    G --> I[按时间重命名]
-    H --> J[尝试从文件名提取时间]
-    J --> K[使用修改时间]
-    I --> L[按年份组织]
-    K --> L
-    L --> M[再次MD5去重]
-    M --> N[结束]
+flowchart TD
+    A([开始]) --> B[初始准备阶段]
+    
+    subgraph B[初始准备阶段]
+        direction TB
+        B1[递归扫描源文件夹及子目录] --> B2[复制图片到目标目录/image\n处理文件名冲突]
+        B1 --> B3[复制视频到目标目录/video\n处理文件名冲突]
+        B2 & B3 --> B4[计算目标目录所有文件MD5值]
+        B4 --> B5[删除重复文件]
+    end
+    
+    B --> C[图片处理]
+    
+    subgraph C[图片处理]
+        direction TB
+        C1[移动目标目录非image图片到/image] --> C2[图片时间分类]
+        
+        subgraph C2[图片时间分类]
+            direction TB
+            C2a[提取图片拍摄时间] --> C2b{拍摄时间存在?}
+            C2b -->|是| C2c[打印两种格式:\nYYYY:MM:DD HH:MM:SS\nYYYYMMDD_HHMMSS]
+            C2b -->|否| C2d[异常处理]
+            C2c --> C2e[存入image/camera]
+            C2d --> C2f[存入image/no_camera]
+        end
+        
+        C2e --> C3[camera目录处理]
+        C2f --> C4[no_camera目录处理]
+        
+        subgraph C3[camera目录处理]
+            direction LR
+            C3a[检查命名规范] --> C3b{符合\nIMG_YYYYMMDD_HHMMSS?}
+            C3b -->|是| C3c[跳过重命名]
+            C3b -->|否| C3d[用拍摄时间重命名]
+            C3c & C3d --> C3e[提取年月信息]
+            C3e --> C3f{提取成功?}
+            C3f -->|是| C3g[创建分组目录\nYYYY 或 YYYY-MM]
+            C3f -->|否| C3h[跳过]
+        end
+        
+        subgraph C4[no_camera目录处理]
+            direction LR
+            C4a[检查命名规范] --> C4b{符合规范?}
+            C4b -->|是| C4c[跳过重命名]
+            C4b -->|否| C4d[应用正则规则]
+            C4d --> C4e1[规则1: YYYYMMDD_IMG_HHMM]
+            C4d --> C4e2[规则2: MTXX_YYYYMMDD_HHMMSS]
+            C4d --> C4e3[规则3: ptYYYY_MM_DD_HH_MM_SS]
+            C4d --> C4e4[规则4: beauty_YYYMMDDHHMMSS]
+            C4e1 & C4e2 & C4e3 & C4e4 --> C4f[重命名文件]
+            C4f --> C4g[分组: 同camera规则]
+        end
+    end
+    
+    B --> D[视频处理]
+    
+    subgraph D[视频处理]
+        direction TB
+        D1[移动目标目录非video视频到/video] --> D2[视频时间分类]
+        
+        subgraph D2[视频时间分类]
+            direction TB
+            D2a[提取视频拍摄时间] --> D2b{拍摄时间存在?}
+            D2b -->|是| D2c[打印两种格式:\nYYYY:MM:DD HH:MM:SS\nYYYYMMDD_HHMMSS]
+            D2b -->|否| D2d[异常处理]
+            D2c --> D2e[存入video/camera]
+            D2d --> D2f[存入video/no_camera]
+        end
+        
+        D2e --> D3[camera目录处理]
+        D2f --> D4[no_camera目录处理]
+        
+        subgraph D3[camera目录处理]
+            direction LR
+            D3a[检查命名规范] --> D3b{符合\nIMG_YYYYMMDD_HHMMSS?}
+            D3b -->|是| D3c[跳过重命名]
+            D3b -->|否| D3d[用拍摄时间重命名]
+            D3c & D3d --> D3e[提取年月信息]
+            D3e --> D3f{提取成功?}
+            D3f -->|是| D3g[创建分组目录\nYYYY 或 YYYY-MM]
+            D3f -->|否| D3h[跳过]
+        end
+        
+        subgraph D4[no_camera目录处理]
+            direction LR
+            D4a[提取年月信息] --> D4b{提取成功?}
+            D4b -->|是| D4c[创建分组目录\nYYYY 或 YYYY-MM]
+            D4b -->|否| D4d[跳过]
+        end
+    end
+    
+    C & D --> Z([结束])
