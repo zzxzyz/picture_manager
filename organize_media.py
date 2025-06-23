@@ -132,6 +132,7 @@ def get_creation_date(file_path):
                     # Tag 36867: DateTimeOriginal
                     date_str = exif_data.get(36867)
                     if date_str:
+                        logger.info(f"{file_path} EXIF data: {date_str}") 
                         return datetime.strptime(date_str, '%Y:%m:%d %H:%M:%S')
         except Exception:
             pass # Not an image or no EXIF data
@@ -181,7 +182,7 @@ def process_and_group_files(file_list, source_dir, dry_run=False):
             continue
 
         _, extension = os.path.splitext(file_path)
-        new_filename = creation_date.strftime(f"%Y-%m-%d_%H.%M.%S{extension.lower()}")
+        new_filename = creation_date.strftime(f"%Y%m%d_%H%M%S{extension.lower()}")
         
         year_month_folder = creation_date.strftime("%Y-%m")
         if media_type == 'photo':
