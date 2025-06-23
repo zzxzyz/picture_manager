@@ -19,6 +19,9 @@ except ImportError:
     print("hachoir is not installed. Please run 'pip install hachoir'")
     createParser = None
 
+PHOTO_EXTS = {'.jpg', '.jpeg', '.png', '.heic', '.bmp', '.gif', '.tiff', '.webp', '.raw', '.cr2', '.nef', '.arw'}
+VIDEO_EXTS = {'.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv', '.3gp', '.mts', '.m2ts', '.webm', '.mpg', '.mpeg', '.rmvb', '.ts'}
+
 def _calculate_hash(file_path):
     """Calculates the MD5 hash of a file."""
     hash_md5 = hashlib.md5()
@@ -117,13 +120,27 @@ def get_creation_date(file_path):
     except Exception:
         return None
 
+def get_media_type(file_path):
+    ext = os.path.splitext(file_path)[1].lower()
+    if ext in PHOTO_EXTS:
+        return 'photo'
+    elif ext in VIDEO_EXTS:
+        return 'video'
+    else:
+        return None
+
 def process_and_group_files(file_list, source_dir, dry_run=False):
     """
-    Renames files based on creation date and groups them into Year/Month folders.
+    Renames files based on creation date and groups them into photos/YYYY-MM or videos/YYYY-MM folders.
     """
     print("\nStarting file processing (rename and group)...")
     processed_count = 0
     for file_path in file_list:
+        media_type = get_media_type(file_path)
+        if not media_type:
+            print(f"Skipping unsupported file type: {file_path}")
+            continue
+
         creation_date = get_creation_date(file_path)
         if not creation_date:
             print(f"Could not determine creation date for: {file_path}. Skipping.")
@@ -132,14 +149,14 @@ def process_and_group_files(file_list, source_dir, dry_run=False):
         _, extension = os.path.splitext(file_path)
         new_filename = creation_date.strftime(f"%Y-%m-%d_%H.%M.%S{extension.lower()}")
         
-        year_folder = str(creation_date.year)
-        month_folder = creation_date.strftime("%m")
-        
-        target_dir = os.path.join(source_dir, year_folder, month_folder)
+        year_month_folder = creation_date.strftime("%Y-%m")
+        if media_type == 'photo':
+            target_dir = os.path.join(source_dir, 'photos', year_month_folder)
+        else:
+            target_dir = os.path.join(source_dir, 'videos', year_month_folder)
         new_file_path = os.path.join(target_dir, new_filename)
 
         if os.path.abspath(file_path) == os.path.abspath(new_file_path):
-            # print(f"File is already correctly named and placed: {file_path}")
             continue
 
         print(f"Processing: {os.path.basename(file_path)}")
@@ -155,7 +172,6 @@ def process_and_group_files(file_list, source_dir, dry_run=False):
             
             # To prevent overwriting, check if a file with the new name already exists
             if os.path.exists(new_file_path):
-                # Simple collision handling: append a number
                 base, ext = os.path.splitext(new_file_path)
                 i = 1
                 while os.path.exists(f"{base}_{i}{ext}"):
