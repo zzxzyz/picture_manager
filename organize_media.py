@@ -4,6 +4,7 @@ import hashlib
 from collections import defaultdict
 from datetime import datetime
 import re
+import logging
 
 try:
     from PIL import Image
@@ -22,6 +23,19 @@ except ImportError:
 PHOTO_EXTS = {'.jpg', '.jpeg', '.png', '.heic', '.bmp', '.gif', '.tiff', '.webp', '.raw', '.cr2', '.nef', '.arw'}
 VIDEO_EXTS = {'.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv', '.3gp', '.mts', '.m2ts', '.webm', '.mpg', '.mpeg', '.rmvb', '.ts'}
 
+# 日志配置
+log_time_str = datetime.now().strftime('%Y%m%d_%H%M%S')
+LOG_FILENAME = f'organize_media_{log_time_str}.log'
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s: %(message)s',
+    handlers=[
+        logging.FileHandler(LOG_FILENAME, encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
 def _calculate_hash(file_path):
     """Calculates the MD5 hash of a file."""
     hash_md5 = hashlib.md5()
@@ -31,7 +45,7 @@ def _calculate_hash(file_path):
                 hash_md5.update(chunk)
         return hash_md5.hexdigest()
     except (IOError, OSError) as e:
-        print(f"Could not read file {file_path}: {e}")
+        logger.error(f"Could not read file {file_path}: {e}")
         return None
 
 def find_and_delete_duplicates(all_files, dry_run=False):
@@ -49,10 +63,10 @@ def find_and_delete_duplicates(all_files, dry_run=False):
             duplicates_to_delete.extend(file_list[1:])
             
     if not duplicates_to_delete:
-        print("No duplicate files found.")
+        logger.info("No duplicate files found.")
         return all_files # Return original list if no duplicates
 
-    print(f"Found {len(duplicates_to_delete)} duplicate files to remove.")
+    logger.info(f"Found {len(duplicates_to_delete)} duplicate files to remove.")
 
     remaining_files = []
     for file_path in all_files:
@@ -61,14 +75,14 @@ def find_and_delete_duplicates(all_files, dry_run=False):
 
     if dry_run:
         for file_path in duplicates_to_delete:
-            print(f"DRY-RUN: Would delete duplicate file: {file_path}")
+            logger.info(f"DRY-RUN: Would delete duplicate file: {file_path}")
     else:
         for file_path in duplicates_to_delete:
             try:
                 os.remove(file_path)
-                print(f"Deleted duplicate file: {file_path}")
+                logger.info(f"Deleted duplicate file: {file_path}")
             except OSError as e:
-                print(f"Error deleting file {file_path}: {e}")
+                logger.error(f"Error deleting file {file_path}: {e}")
     
     return remaining_files
 
@@ -153,17 +167,17 @@ def process_and_group_files(file_list, source_dir, dry_run=False):
     """
     Renames files based on creation date and groups them into photos/YYYY-MM or videos/YYYY-MM folders.
     """
-    print("\nStarting file processing (rename and group)...")
+    logger.info("\nStarting file processing (rename and group)...")
     processed_count = 0
     for file_path in file_list:
         media_type = get_media_type(file_path)
         if not media_type:
-            print(f"Skipping unsupported file type: {file_path}")
+            logger.warning(f"Skipping unsupported file type: {file_path}")
             continue
 
         creation_date = get_creation_date(file_path)
         if not creation_date:
-            print(f"Could not determine creation date for: {file_path}. Skipping.")
+            logger.warning(f"Could not determine creation date for: {file_path}. Skipping.")
             continue
 
         _, extension = os.path.splitext(file_path)
@@ -179,8 +193,8 @@ def process_and_group_files(file_list, source_dir, dry_run=False):
         if os.path.abspath(file_path) == os.path.abspath(new_file_path):
             continue
 
-        print(f"Processing: {os.path.basename(file_path)}")
-        print(f"  -> New name: {new_file_path}")
+        logger.info(f"Processing: {os.path.basename(file_path)}")
+        logger.info(f"  -> New name: {new_file_path}")
 
         if dry_run:
             processed_count += 1
@@ -197,26 +211,26 @@ def process_and_group_files(file_list, source_dir, dry_run=False):
                 while os.path.exists(f"{base}_{i}{ext}"):
                     i += 1
                 new_file_path = f"{base}_{i}{ext}"
-                print(f"  -> Collision detected. Renaming to: {os.path.basename(new_file_path)}")
+                logger.warning(f"  -> Collision detected. Renaming to: {os.path.basename(new_file_path)}")
 
             os.rename(file_path, new_file_path)
             processed_count += 1
         except OSError as e:
-            print(f"Error moving file {file_path} to {new_file_path}: {e}")
+            logger.error(f"Error moving file {file_path} to {new_file_path}: {e}")
 
     if processed_count > 0:
-        print(f"\nSuccessfully processed and moved {processed_count} files.")
+        logger.info(f"\nSuccessfully processed and moved {processed_count} files.")
     else:
-        print("\nNo files needed processing.")
+        logger.info("\nNo files needed processing.")
 
 def organize_media(source_dir, dry_run=False):
     """
     Organizes photos and videos in a directory by deleting duplicates,
     renaming them with shooting date, and grouping them by year and month.
     """
-    print(f"Starting media organization for directory: {source_dir}")
+    logger.info(f"Starting media organization for directory: {source_dir}")
     if dry_run:
-        print("Running in DRY-RUN mode. No files will be changed.")
+        logger.info("Running in DRY-RUN mode. No files will be changed.")
 
     # Step 1: Find all files and remove ignored ones
     all_files = []
@@ -226,11 +240,11 @@ def organize_media(source_dir, dry_run=False):
             if file not in ignored_files:
                 all_files.append(os.path.join(root, file))
     
-    print(f"Found {len(all_files)} files to process.")
+    logger.info(f"Found {len(all_files)} files to process.")
 
     # Step 2: Delete duplicates
     remaining_files = find_and_delete_duplicates(all_files, dry_run)
-    print(f"{len(remaining_files)} files remaining after checking for duplicates.")
+    logger.info(f"{len(remaining_files)} files remaining after checking for duplicates.")
 
     # Step 3: Classify, rename and group files
     process_and_group_files(remaining_files, source_dir, dry_run)
