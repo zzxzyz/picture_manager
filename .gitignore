@@ -3,3 +3,4 @@ __pycache__/*
 tests/__pycache__/*
 tests/test_organizer/*
 .myvenv/*
+*.txt

@@ -93,11 +93,12 @@ def get_creation_date(file_path):
     优先从文件名中提取完整的日期和时间（如YYYY-MM-DD_HH.MM.SS、YYYYMMDD_HHMMSS、YYYY-MM-DD-HH-MM-SS等）。
     """
     filename = os.path.basename(file_path)
-    # 优先匹配常见的带时间的格式
+    # 优先匹配带时分秒的格式，顺序从最精确到最宽泛
     patterns = [
         (r'(\d{4})[-_](\d{2})[-_](\d{2})[-_](\d{2})[.:-](\d{2})[.:-](\d{2})', '%Y-%m-%d-%H.%M.%S'),
         (r'(\d{4})[-_](\d{2})[-_](\d{2})[_-](\d{2})[.:-](\d{2})[.:-](\d{2})', '%Y-%m-%d_%H.%M.%S'),
         (r'(\d{8})[_-](\d{6})', '%Y%m%d_%H%M%S'),
+        (r'(\d{8})(\d{6})', '%Y%m%d%H%M%S'),  # 支持20230101123456
         (r'(\d{4})[-_](\d{2})[-_](\d{2})', '%Y-%m-%d'),
         (r'(\d{8})', '%Y%m%d'),
     ]
@@ -105,21 +106,19 @@ def get_creation_date(file_path):
         match = re.search(pattern, filename)
         if match:
             try:
-                if len(match.groups()) >= 6:
-                    # 有年月日时分秒
-                    dt_str = '_'.join(match.groups())
-                    # 统一格式化
-                    if fmt == '%Y%m%d_%H%M%S':
-                        return datetime.strptime(match.group(1)+match.group(2), '%Y%m%d%H%M%S')
-                    else:
-                        # 替换所有分隔符为标准格式
-                        dt_str = re.sub(r'[-_.:]', '', dt_str)
-                        return datetime.strptime(dt_str, '%Y%m%d%H%M%S')
-                elif len(match.groups()) == 3:
-                    # 只有年月日
-                    return datetime.strptime('-'.join(match.groups()), '%Y-%m-%d')
-                elif len(match.groups()) == 1 and len(match.group(1)) == 8:
-                    return datetime.strptime(match.group(1), '%Y%m%d')
+                if fmt == '%Y%m%d_%H%M%S':
+                    dt_str = match.group(1) + '_' + match.group(2)
+                    return datetime.strptime(dt_str, fmt)
+                elif fmt == '%Y%m%d%H%M%S':
+                    dt_str = match.group(1) + match.group(2)
+                    return datetime.strptime(dt_str, fmt)
+                elif fmt in ('%Y-%m-%d-%H.%M.%S', '%Y-%m-%d_%H.%M.%S'):
+                    dt_str = f"{match.group(1)}-{match.group(2)}-{match.group(3)}_{match.group(4)}.{match.group(5)}.{match.group(6)}"
+                    return datetime.strptime(dt_str, '%Y-%m-%d_%H.%M.%S')
+                elif fmt == '%Y-%m-%d':
+                    return datetime.strptime('-'.join(match.groups()), fmt)
+                elif fmt == '%Y%m%d':
+                    return datetime.strptime(match.group(1), fmt)
             except Exception:
                 pass
 
