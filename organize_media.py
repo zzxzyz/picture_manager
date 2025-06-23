@@ -76,18 +76,38 @@ def get_creation_date(file_path):
     """
     Tries to get the creation date of a media file from its metadata.
     Fallback to file system's modification time.
+    优先从文件名中提取完整的日期和时间（如YYYY-MM-DD_HH.MM.SS、YYYYMMDD_HHMMSS、YYYY-MM-DD-HH-MM-SS等）。
     """
-    # Regex to find a date in YYYY-MM-DD or YYYY:MM:DD format
-    date_pattern = re.compile(r'(\d{4})[:\-](\d{2})[:\-](\d{2})')
-
-    # 1. Check filename first
     filename = os.path.basename(file_path)
-    match = date_pattern.search(filename)
-    if match:
-        try:
-            return datetime.strptime(match.group(0).replace(':', '-'), '%Y-%m-%d')
-        except ValueError:
-            pass # Continue to other methods
+    # 优先匹配常见的带时间的格式
+    patterns = [
+        (r'(\d{4})[-_](\d{2})[-_](\d{2})[-_](\d{2})[.:-](\d{2})[.:-](\d{2})', '%Y-%m-%d-%H.%M.%S'),
+        (r'(\d{4})[-_](\d{2})[-_](\d{2})[_-](\d{2})[.:-](\d{2})[.:-](\d{2})', '%Y-%m-%d_%H.%M.%S'),
+        (r'(\d{8})[_-](\d{6})', '%Y%m%d_%H%M%S'),
+        (r'(\d{4})[-_](\d{2})[-_](\d{2})', '%Y-%m-%d'),
+        (r'(\d{8})', '%Y%m%d'),
+    ]
+    for pattern, fmt in patterns:
+        match = re.search(pattern, filename)
+        if match:
+            try:
+                if len(match.groups()) >= 6:
+                    # 有年月日时分秒
+                    dt_str = '_'.join(match.groups())
+                    # 统一格式化
+                    if fmt == '%Y%m%d_%H%M%S':
+                        return datetime.strptime(match.group(1)+match.group(2), '%Y%m%d%H%M%S')
+                    else:
+                        # 替换所有分隔符为标准格式
+                        dt_str = re.sub(r'[-_.:]', '', dt_str)
+                        return datetime.strptime(dt_str, '%Y%m%d%H%M%S')
+                elif len(match.groups()) == 3:
+                    # 只有年月日
+                    return datetime.strptime('-'.join(match.groups()), '%Y-%m-%d')
+                elif len(match.groups()) == 1 and len(match.group(1)) == 8:
+                    return datetime.strptime(match.group(1), '%Y%m%d')
+            except Exception:
+                pass
 
     # 2. Try EXIF data for images
     if Image:
